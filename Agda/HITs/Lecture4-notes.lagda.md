@@ -184,8 +184,8 @@ ap-∙ (refl _) (refl _) = refl _
 calculate-double-2-loops : ap double (loop ∙ loop) ≡ loop ∙ loop ∙ loop ∙ loop
 calculate-double-2-loops = 
   ap double (loop ∙ loop) ≡⟨ ap-∙ loop loop ⟩
-  ap double loop ∙ ap double loop ≡⟨ ap₂ (\ p q → p ∙ q) (S1-rec-loop _ _) (S1-rec-loop _ _)  ⟩
-  (loop ∙ loop) ∙ (loop ∙ loop) ≡⟨  (∙assoc (loop ∙ loop) loop loop )  ⟩
+  ap double loop ∙ ap double loop ≡⟨ ap₂ (\ p q → p ∙ q) (S1-rec-loop _ _) (S1-rec-loop _ _) ⟩
+  (loop ∙ loop) ∙ (loop ∙ loop) ≡⟨ ∙assoc (loop ∙ loop) loop loop ⟩
   ((loop ∙ loop) ∙ loop) ∙ loop ∎
 ```
 

@@ -35,10 +35,10 @@ open import sums
 Prove
 ```agda
 uncurry : {A B X : Type} → (A → B → X) → (A × B → X)
-uncurry = {!!}
+uncurry = λ z z₁ → z (z₁ .pr₁) (z₁ .pr₂)
 
 curry : {A B X : Type} → (A × B → X) → (A → B → X)
-curry = {!!}
+curry = λ z z₁ z₂ → z (z₁ , z₂)
 ```
 You might know these functions from programming e.g. in Haskell.
 But what do they say under the propositions-as-types interpretation?
@@ -48,39 +48,44 @@ But what do they say under the propositions-as-types interpretation?
 
 Consider the following goals:
 ```agda
+exfalso : ∀{A : Set} → 𝟘 → A
+exfalso ()
+
 [i] : {A B C : Type} → (A × B) ∔ C → (A ∔ C) × (B ∔ C)
-[i] = {!!}
+[i] (inl x) = inl (x .pr₁) , inl (x .pr₂)
+[i] (inr x) = inr x , inr x
 
 [ii] : {A B C : Type} → (A ∔ B) × C → (A × C) ∔ (B × C)
-[ii] = {!!}
+[ii] (inl x , pr₄) = inl (x , pr₄)
+[ii] (inr x , pr₄) = inr (x , pr₄)
 
 [iii] : {A B : Type} → ¬ (A ∔ B) → ¬ A × ¬ B
-[iii] = {!!}
+[iii] = λ z → (λ z₁ → z (inl z₁)) , (λ z₁ → z (inr z₁))
 
 [iv] : {A B : Type} → ¬ (A × B) → ¬ A ∔ ¬ B
-[iv] = {!!}
+[iv] x = {!!} -- we don't know which of A or B might be empty
 
 [v] : {A B : Type} → (A → B) → ¬ B → ¬ A
-[v] = {!!}
+[v] = λ AtoB nb a → nb (AtoB a)
 
 [vi] : {A B : Type} → (¬ A → ¬ B) → B → A
-[vi] = {!!}
+[vi] f b = {!!} -- We do get that a is not false, but dne does not hold here.
 
 [vii] : {A B : Type} → ((A → B) → A) → A
-[vii] = {!!}
+[vii] = {!!} -- Pierce's law, implies LEM
 
 [viii] : {A : Type} {B : A → Type}
     → ¬ (Σ a ꞉ A , B a) → (a : A) → ¬ B a
-[viii] = {!!}
+[viii] = λ z a z₁ → z (a , z₁)
 
 [ix] : {A : Type} {B : A → Type}
     → ¬ ((a : A) → B a) → (Σ a ꞉ A , ¬ B a)
-[ix] = {!!}
+[ix] = {!!} -- Cannot construct a witness from a contradiction.
 
 [x] : {A B : Type} {C : A → B → Type}
       → ((a : A) → (Σ b ꞉ B , C a b))
       → Σ f ꞉ (A → B) , ((a : A) → C a (f a))
-[x] = {!!}
+[x] = λ z → (λ z₁ → z z₁ .pr₁) , (λ a → z a .pr₂)
 ```
 For each goal determine whether it is provable or not.
 If it is, fill it. If not, explain why it shouldn't be possible.
@@ -100,7 +105,7 @@ In the lecture we have discussed that we can't  prove `∀ {A : Type} → ¬¬ A
 What you can prove however, is
 ```agda
 tne : ∀ {A : Type} → ¬¬¬ A → ¬ A
-tne = {!!}
+tne = λ z z₁ → z (λ z₂ → z₂ z₁)
 ```
 
 
@@ -108,10 +113,10 @@ tne = {!!}
 Prove
 ```agda
 ¬¬-functor : {A B : Type} → (A → B) → ¬¬ A → ¬¬ B
-¬¬-functor = {!!}
+¬¬-functor = λ z z₁ z₂ → z₁ (λ z₃ → z₂ (z z₃))
 
 ¬¬-kleisli : {A B : Type} → (A → ¬¬ B) → ¬¬ A → ¬¬ B
-¬¬-kleisli = {!!}
+¬¬-kleisli = λ z z₁ z₂ → z₁ (λ z₃ → z z₃ z₂)
 ```
 Hint: For the second goal use `tne` from the previous exercise
 
@@ -131,7 +136,8 @@ to a true proposition while an uninhabited type corresponds to a false propositi
 With this in mind construct a family
 ```agda
 bool-as-type : Bool → Type
-bool-as-type = {!!}
+bool-as-type true  = 𝟙
+bool-as-type false = 𝟘
 ```
 such that `bool-as-type true` corresponds to "true" and
 `bool-as-type false` corresponds to "false". (Hint:
@@ -143,7 +149,8 @@ we have seen canonical types corresponding true and false in the lectures)
 Prove
 ```agda
 bool-≡-char₁ : ∀ (b b' : Bool) → b ≡ b' → (bool-as-type b ⇔ bool-as-type b')
-bool-≡-char₁ = {!!}
+bool-≡-char₁ _ _ (refl true) = (λ _ → ⋆) , (λ _ → ⋆)
+bool-≡-char₁ _ _ (refl false) = ((λ ()) ,  λ ())
 ```
 
 
@@ -162,7 +169,12 @@ You can actually prove this much easier! How?
 Finish our characterisation of `_≡_` by proving
 ```agda
 bool-≡-char₂ : ∀ (b b' : Bool) → (bool-as-type b ⇔ bool-as-type b') → b ≡ b'
-bool-≡-char₂ = {!!}
+bool-≡-char₂ true true _ = refl true
+bool-≡-char₂ true false (f , _) with f ⋆
+... | ()
+bool-≡-char₂ false true (_ , g) with g ⋆
+... | ()
+bool-≡-char₂ false false _ = refl false
 ```
 
 
@@ -177,6 +189,37 @@ has-bool-dec-fct A = Σ f ꞉ (A → A → Bool) , (∀ x y → x ≡ y ⇔ (f x
 Prove that
 
 ```agda
+data Singleton {A : Set} (x : A) : Set where
+  _with≡_ : (y : A) → x ≡ y → Singleton x
+
+inspect : ∀ {A : Set} (x : A) → Singleton x
+inspect x = x with≡ refl x
+
+bothTrueAndFalse : (x : Bool) → x ≡ true → x ≡ false → 𝟘
+bothTrueAndFalse _ (refl _) ()
+
+
 decidable-equality-char : (A : Type) → has-decidable-equality A ⇔ has-bool-dec-fct A
-decidable-equality-char = ?
+decidable-equality-char A .pr₁ discA = f , f-decides
+   where
+     sumtoBool : ∀ {a b : A} → is-decidable (a ≡ b) → Bool
+     sumtoBool (inl _) = true
+     sumtoBool (inr _) = false
+
+     sumtoBool-refl : ∀ {x : A} → (d : is-decidable (x ≡ x)) → sumtoBool d  ≡ true
+     sumtoBool-refl (inl y) = refl (sumtoBool (inl y))
+     sumtoBool-refl {x} (inr n) = 𝟘-nondep-elim (n (refl x))
+
+     f : A → A → Bool
+     f a b = sumtoBool (discA a b)
+
+     f-decides : (x y : A) → x ≡ y ⇔ f x y ≡ true
+     f-decides x .x .pr₁ (refl .x) = sumtoBool-refl (discA x x)
+     f-decides x y .pr₂ with discA x y
+     ... | inl a = λ _ → a
+     ... | inr _ = λ f≡t → 𝟘-nondep-elim (bothTrueAndFalse false f≡t (refl false))
+
+decidable-equality-char A .pr₂ (f , biimp) a b with biimp a b | inspect (f a b) 
+... | ( _ , g ) | true with≡ f≡true = inl (g f≡true)
+... | (g , _ ) | false with≡ f≡false = inr λ a≡b → bothTrueAndFalse (f a b) (g a≡b) f≡false
 ```

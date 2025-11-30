@@ -17,10 +17,24 @@ a path-between-paths-between-paths between the two!
 
 ```agda
 homotopy1 : (loop ∙ ! loop) ∙ loop ≡ loop
-homotopy1 = {!!}
+homotopy1 =
+    (loop ∙ ! loop) ∙ loop
+        ≡⟨ ap (_∙ loop) (!-inv-r loop )⟩
+    (refl base) ∙ loop
+        ≡⟨ ∙unit-l loop ⟩
+    loop
+        ∎
 
 homotopy2 : (loop ∙ ! loop) ∙ loop ≡ loop
-homotopy2 = {!!}
+homotopy2 =
+    (loop ∙ ! loop) ∙ loop
+        ≡⟨ ! (∙assoc loop ( ! loop ) loop) ⟩
+    loop ∙ (! loop ∙ loop)
+        ≡⟨ ap (loop ∙_ ) (!-inv-l loop )⟩
+    loop ∙ (refl base)
+        ≡⟨ ∙unit-r loop ⟩
+    loop
+        ∎
 ```
 
 (Harder exercise (🌶️): give a path between homotopy1 and
@@ -43,8 +57,24 @@ Use them to prove that the double function takes loop-inverse to
 loop-inverse concatenated with itself.
 
 ```agda
+ap-! : {A B : Type} (f : A → B) {x y : A} (p : x ≡ y) 
+     → ap f (! p) ≡ ! (ap f p)
+ap-! f (refl _) = refl (ap f (! (refl _)))
+
+!-distrib-∙ : {A : Type} {x y z : A} (p : x ≡ y) (q : y ≡ z)
+       → ! (p ∙ q) ≡ (! q) ∙ ! p
+!-distrib-∙ (refl _) (refl _) = refl (! (refl _ ∙ refl _))
+
 double-!loop : ap double (! loop) ≡ ! loop ∙ ! loop
-double-!loop = {!!}
+double-!loop =
+  ap double (! loop)
+    ≡⟨ ap-! double loop ⟩
+  ! (ap double loop)
+    ≡⟨ ap ! calculate-double-loop ⟩
+  ! (loop ∙ loop)
+    ≡⟨ !-distrib-∙ loop loop ⟩ 
+  ! loop ∙ ! loop
+    ∎
 ```
 
 (⋆) Define a function invert : S1 → S1 such that (ap invert) inverts a path
@@ -52,7 +82,7 @@ on the circle, i.e. sends the n-fold loop to the -n-fold loop.
 
 ```agda
 invert : S1 → S1
-invert = {!!}
+invert = S1-rec base (! loop)
 ```
 
 # Circles equivalence
@@ -65,14 +95,29 @@ is homotopic to the identity on base and loop:
 
 ```agda
 to-from-base : from (to base) ≡ base
-to-from-base = {!!}
+to-from-base = refl (from (to base))
 ```
 
 (⋆⋆⋆) 
 
 ```
 to-from-loop : ap from (ap to loop) ≡ loop
-to-from-loop = {!!}
+to-from-loop =
+ ap from (ap to loop)
+   ≡⟨ ap (λ x → ap from x) (S1-rec-loop _ _) ⟩
+ ap from (east ∙ ! west)
+   ≡⟨ ap-∙ east (! west) ⟩
+ (ap from east) ∙ (ap from (! west))
+   ≡⟨ ap ((ap from east) ∙_) (ap-! from west) ⟩
+ (ap from east) ∙ ! (ap from west)
+   ≡⟨ ap  (_∙ ! (ap from west)) (Circle2-rec-east _ _ _ _) ⟩
+ loop ∙ ! (ap from west)
+   ≡⟨ ap (λ x → loop ∙ ! x ) (Circle2-rec-west _ _ _ _) ⟩
+ loop ∙ ! (refl base)
+   ≡⟨ ap (λ x → loop ∙ ! x ) (refl (refl base)) ⟩
+ loop ∙ (refl base)
+   ≡⟨ refl loop ⟩
+ loop ∎
 ```
 
 Note: the problems below here are progressively more optional, so if you
@@ -93,14 +138,20 @@ paths in product types compose (⋆⋆⋆):
 compose-pair≡ : {A B : Type} {x1 x2 x3 : A} {y1 y2 y3 : B}
                 (p12 : x1 ≡ x2) (p23 : x2 ≡ x3)
                 (q12 : y1 ≡ y2) (q23 : y2 ≡ y3)
-              → ((pair≡ p12 q12) ∙ (pair≡ p23 q23)) ≡ {!!} [ (x1 , y1) ≡ (x3 , y3) [ A × B ] ]
-compose-pair≡ = {!!}
+              → ((pair≡ p12 q12) ∙ (pair≡ p23 q23)) ≡ pair≡ (p12 ∙ p23) (q12 ∙ q23) [ (x1 , y1) ≡ (x3 , y3) [ A × B ] ]
+compose-pair≡ (refl _) (refl _) (refl _) (refl _) = refl (pair≡ (refl _) (refl _) ∙ pair≡ (refl _) (refl _))
+
+commute-pair-refl : {A B : Type} {x1 x2 : A} {y1 y2 : B}
+                (p12 : x1 ≡ x2)
+                (q12 : y1 ≡ y2)
+              → ((pair≡ p12 (refl y1)) ∙ (pair≡ (refl x2) q12)) ≡ ((pair≡ (refl x1) q12) ∙ (pair≡ p12 (refl y2)))  [ (x1 , y1) ≡ (x2 , y2) [ A × B ] ]
+commute-pair-refl (refl x) (refl y) = refl (pair≡ (refl x) (refl y) ∙ pair≡ (refl x) (refl y))
 ```
 
 (🌶️)
 ```
 torus-to-circles : Torus → S1 × S1
-torus-to-circles = {!!}
+torus-to-circles = T-rec (base , base) (pair≡ loop (refl base)) ( pair≡ (refl base) loop) (commute-pair-refl loop loop)
 ```
 
 # Suspensions (🌶️)
@@ -111,11 +162,16 @@ equivalence (functions back and forth), since we haven't seen how to
 prove that such functions are inverse yet.
 
 ```agda
-c2s : Circle2 → Susp {!!}
-c2s = {!!}
+c2s : Circle2 → Susp Bool
+c2s = Circle2-rec northS southS (merid true) (merid false)
 
-s2c : Susp {!!} → Circle2
-s2c = {!!}
+s2c : Susp Bool → Circle2
+s2c = Susp-rec north south west-east
+  where
+    west-east : Bool → north ≡ south
+    west-east true = west
+    west-east false = east
+
 ```
 
 Suspension is a functor from types, which means that it acts on

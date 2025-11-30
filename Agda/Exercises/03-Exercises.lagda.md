@@ -43,13 +43,13 @@ can be inferred directly from the same operations on paths.
 Try to prove reflexivity, symmetry and transitivity of `_∼_` by filling these holes.
 ```agda
   ∼-refl : (f : (x : A) → B x) → f ∼ f
-  ∼-refl f = {!!}
+  ∼-refl f x = refl (f x)
 
   ∼-inv : (f g : (x : A) → B x) → (f ∼ g) → (g ∼ f)
-  ∼-inv f g H x = {!!}
+  ∼-inv f g H x = sym (H x)
 
   ∼-concat : (f g h : (x : A) → B x) → f ∼ g → g ∼ h → f ∼ h
-  ∼-concat f g h H K x = {!!}
+  ∼-concat f g h H K x = trans (H x) (K x)
 
   infix 0 _∼_
 ```
@@ -84,15 +84,15 @@ infix 0 _≅_
 Reformulate the same definition using Sigma-types.
 ```agda
 is-bijection' : {A B : Type} → (A → B) → Type
-is-bijection' f = {!!}
+is-bijection' {A} {B} f = Σ g ꞉ (B → A) , ((g ∘ f ∼ id) × (f ∘ g ∼ id))
 
 _≅'_ : Type → Type → Type
-A ≅' B = {!!}
+A ≅' B = Σ f ꞉ (A → B) , is-bijection' f  
 ```
 The definition with `Σ` is probably more intuitive, but, as discussed above,
 the definition with a record is often easier to work with,
 because we can easily extract the components of the definitions using the names of the fields.
-It also often allows Agda to infer more types, and to give us more sensible goals in the
+  It also often allows Agda to infer more types, and to give us more sensible goals in the
 interactive development of Agda programs and proofs.
 
 Notice that `inverse` plays the role of `g`.
@@ -115,26 +115,26 @@ Prove that 𝟚 and Bool are isomorphic
 
 ```agda
 Bool-𝟚-isomorphism : Bool ≅ 𝟚
-Bool-𝟚-isomorphism = record { bijection = {!!} ; bijectivity = {!!} }
+Bool-𝟚-isomorphism = record { bijection = f ; bijectivity = f-is-bijection }
  where
   f : Bool → 𝟚
-  f false = {!!}
-  f true  = {!!}
+  f false = 𝟎 
+  f true  = 𝟏 
 
   g : 𝟚 → Bool
-  g 𝟎 = {!!}
-  g 𝟏 = {!!}
+  g 𝟎 = false
+  g 𝟏 = true
 
   gf : g ∘ f ∼ id
-  gf true  = {!!}
-  gf false = {!!}
+  gf true  = refl ((g ∘ f) true)
+  gf false = refl ((g ∘ f) false)
 
   fg : f ∘ g ∼ id
-  fg 𝟎 = {!!}
-  fg 𝟏 = {!!}
+  fg 𝟎 = refl ((f ∘ g) 𝟎)
+  fg 𝟏 = refl ((f ∘ g) 𝟏)
 
   f-is-bijection : is-bijection f
-  f-is-bijection = record { inverse = {!!} ; η = {!!} ; ε = {!!} }
+  f-is-bijection = record { inverse = g ; η = gf ; ε = fg }
 ```
 
 
@@ -161,8 +161,8 @@ Fin-elim : (A : {n : ℕ} → Fin n → Type)
 Fin-elim A a f = h
  where
   h : {n : ℕ} (k : Fin n) → A k
-  h zero    = {!!}
-  h (suc k) = {!!}
+  h zero    = a
+  h (suc k) = f k (h k)
 ```
 
 We give the other definition of the finite types and introduce some notation.
@@ -188,35 +188,35 @@ Fin-isomorphism : (n : ℕ) → Fin n ≅ Fin' n
 Fin-isomorphism n = record { bijection = f n ; bijectivity = f-is-bijection n }
  where
   f : (n : ℕ) → Fin n → Fin' n
-  f (suc n) zero    = {!!}
-  f (suc n) (suc k) = {!!}
+  f (suc n) zero    = inl ⋆
+  f (suc n) (suc k) = inr (f n k)
 
   g : (n : ℕ) → Fin' n → Fin n
-  g (suc n) (inl ⋆) = {!!}
-  g (suc n) (inr k) = {!!}
+  g (suc n) (inl ⋆) = zero
+  g (suc n) (inr k) = suc (g n k)
 
   gf : (n : ℕ) → g n ∘ f n ∼ id
-  gf (suc n) zero    = {!!}
+  gf (suc n) zero    = refl zero
   gf (suc n) (suc k) = γ
    where
     IH : g n (f n k) ≡ k
     IH = gf n k
 
-    γ = g (suc n) (f (suc n) (suc k)) ≡⟨ {!!} ⟩
-        g (suc n) (suc' (f n k))      ≡⟨ {!!} ⟩
-        suc (g n (f n k))             ≡⟨ {!!} ⟩
+    γ = g (suc n) (f (suc n) (suc k)) ≡⟨ refl (g (suc n) (f (suc n) (suc k))) ⟩
+        g (suc n) (suc' (f n k))      ≡⟨ refl (g (suc n) (suc' (f n k))) ⟩
+        suc (g n (f n k))             ≡⟨ ap suc IH ⟩
         suc k                         ∎
 
   fg : (n : ℕ) → f n ∘ g n ∼ id
-  fg (suc n) (inl ⋆) = {!!}
+  fg (suc n) (inl ⋆) = refl ((f (suc n) ∘ g (suc n)) (inl ⋆))
   fg (suc n) (inr k) = γ
    where
     IH : f n (g n k) ≡ k
     IH = fg n k
 
-    γ = f (suc n) (g (suc n) (suc' k)) ≡⟨ {!!} ⟩
-        f (suc n) (suc (g n k))        ≡⟨ {!!} ⟩
-        suc' (f n (g n k))             ≡⟨ {!!} ⟩
+    γ = f (suc n) (g (suc n) (suc' k)) ≡⟨ refl (f (suc n) (g (suc n) (suc' k))) ⟩
+        f (suc n) (suc (g n k))        ≡⟨ refl (f (suc n) (suc (g n k))) ⟩
+        suc' (f n (g n k))             ≡⟨ ap suc' IH ⟩
         suc' k                         ∎
 
   f-is-bijection : (n : ℕ) → is-bijection (f n)
@@ -234,9 +234,9 @@ Give the recursive definition of the less than or equals relation on the natural
 
 ```agda
 _≤₁_ : ℕ → ℕ → Type
-0     ≤₁ y     = {!!}
-suc x ≤₁ 0     = {!!}
-suc x ≤₁ suc y = {!!}
+0     ≤₁ y     = 𝟙
+suc x ≤₁ 0     = 𝟘
+suc x ≤₁ suc y = x ≤₁ y
 ```
 
 ### Exercise 7 (⋆)
@@ -247,7 +247,7 @@ Translate this definition into HoTT.
 
 ```agda
 is-lower-bound : (P : ℕ → Type) (n : ℕ) → Type
-is-lower-bound P n = {!!}
+is-lower-bound P n = (m : ℕ) → (A : P m) → n ≤₁ m 
 ```
 
 We define the type of minimal elements of a type family over the naturals.
@@ -261,7 +261,8 @@ minimal-element P = Σ n ꞉ ℕ , (P n) × (is-lower-bound P n)
 Prove that all numbers are at least as large as zero.
 ```agda
 leq-zero : (n : ℕ) → 0 ≤₁ n
-leq-zero n = {!!}
+leq-zero zero = ⋆
+leq-zero (suc n) = leq-zero n
 ```
 
 
@@ -293,12 +294,11 @@ Prove this lemma.
 
 ```agda
 is-minimal-element-suc :
-  (P : ℕ → Type) (d : is-decidable-predicate P)
-  (m : ℕ) (pm : P (suc m))
-  (is-lower-bound-m : is-lower-bound (λ x → P (suc x)) m) →
-  ¬ (P 0) → is-lower-bound P (suc m)
-is-minimal-element-suc P d m pm is-lower-bound neg-p0 = {!   !}
-```
+  {P : ℕ → Type}  {m : ℕ}  → (is-lower-bound (λ x → P (suc x)) m) → ¬ (P 0) →
+  is-lower-bound P (suc m)
+is-minimal-element-suc _ neg-p0 zero A = 𝟘-nondep-elim (neg-p0 A)
+is-minimal-element-suc is-lower-bound _ (suc n) A = is-lower-bound n A
+``` 
 
 ### Exercise 10 (🌶)
 
@@ -308,12 +308,13 @@ Prove this lemma.
 
 ```agda
 well-ordering-principle-suc :
-  (P : ℕ → Type) (d : is-decidable-predicate P)
-  (n : ℕ) (p : P (suc n)) →
-  is-decidable (P 0) →
+  (P : ℕ → Type) → is-decidable (P 0) →
   minimal-element (λ m → P (suc m)) → minimal-element P
-well-ordering-principle-suc P d n p (inl p0) _  = {!!}
-well-ordering-principle-suc P d n p (inr neg-p0) (m , (pm , is-min-m)) = {!!}
+well-ordering-principle-suc P (inl p0) _  = zero ,  p0 , λ m A → ⋆ 
+well-ordering-principle-suc P (inr neg-p0) (m , (pm , is-min-m)) = suc m , (pm , islbPsm)
+  where
+    islbPsm : is-lower-bound P (suc m) 
+    islbPsm = is-minimal-element-suc is-min-m neg-p0
 ```
 
 ### Exercise 11 (🌶)
@@ -321,8 +322,9 @@ well-ordering-principle-suc P d n p (inr neg-p0) (m , (pm , is-min-m)) = {!!}
 Use the previous two lemmas to prove the well-ordering principle
 ```agda
 well-ordering-principle : (P : ℕ → Type) → (d : is-decidable-predicate P) → (n : ℕ) → P n → minimal-element P
-well-ordering-principle P d 0 p = {!!}
-well-ordering-principle P d (suc n) p = well-ordering-principle-suc P d n p (d 0) {!!}
+well-ordering-principle P d 0 p = zero , p , λ m A → ⋆
+well-ordering-principle P d (suc n) p = well-ordering-principle-suc P (d 0)
+    (well-ordering-principle (λ z → P (suc z)) (λ x → d (suc x)) n p)
 ```
 
 ### Exercise 12 (🌶)
@@ -330,20 +332,11 @@ well-ordering-principle P d (suc n) p = well-ordering-principle-suc P d n p (d 0
 Prove that the well-ordering principle returns 0 if `P 0` holds.
 
 ```agda
-is-zero-well-ordering-principle-suc :
-  (P : ℕ → Type) (d : is-decidable-predicate P)
-  (n : ℕ) (p : P (suc n)) (d0 : is-decidable (P 0)) →
-  (x : minimal-element (λ m → P (suc m))) (p0 : P 0) →
-  (pr₁ (well-ordering-principle-suc P d n p d0 x)) ≡ 0
-is-zero-well-ordering-principle-suc P d n p (inl p0) x q0 = {!!}
-is-zero-well-ordering-principle-suc P d n p (inr np0) x q0 = {!!}
+minimal-is-zero-if-P-zero : {P : ℕ → Type} (p0 : P 0) → (m : minimal-element P) → pr₁ m ≡ 0
+minimal-is-zero-if-P-zero p0 (min , _ , min-is-minimal) with min-is-minimal zero p0
+minimal-is-zero-if-P-zero _ (zero , _ , _) | _ = refl zero
 
-is-zero-well-ordering-principle :
-  (P : ℕ → Type) (d : is-decidable-predicate P) →
-  (n : ℕ) → (pn : P n) →
-  P 0 →
-  pr₁ (well-ordering-principle P d n pn) ≡ 0
-is-zero-well-ordering-principle P d zero p p0 = {!   !}
-is-zero-well-ordering-principle P d (suc m) pm =
-  is-zero-well-ordering-principle-suc P d m pm (d 0) {!!}
+is-zero-well-ordering-principle : (P : ℕ → Type) (d : is-decidable-predicate P) → (n : ℕ) → (pn : P n) →
+  P 0 →  pr₁ (well-ordering-principle P d n pn) ≡ 0
+is-zero-well-ordering-principle P d n pn p0 = minimal-is-zero-if-P-zero p0 (well-ordering-principle P d n pn)
 ```
