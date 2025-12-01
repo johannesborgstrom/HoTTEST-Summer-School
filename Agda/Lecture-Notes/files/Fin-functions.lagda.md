@@ -11,6 +11,7 @@ module Fin-functions where
 
 open import prelude
 open import natural-numbers-type
+open import natural-numbers-functions
 ```
 -->
 
@@ -65,6 +66,47 @@ Fin-isomorphism n = record { bijection = f n ; bijectivity = f-is-bijection n }
         suc' (f n (g n k))             ≡⟨ ap suc' IH ⟩
         suc' k                         ∎
 
+  f-is-bijection : (n : ℕ) → is-bijection (f n)
+  f-is-bijection n = record { inverse = g n ; η = gf n ; ε = fg n}
+
+
+
+data _<_ : ℕ → ℕ → Type where
+ 0-smallest      : {y : ℕ} → 0 < suc y
+ suc-preserves-< : {x y : ℕ} → x < y → suc x < suc y
+
+_>_ : ℕ → ℕ → Type
+x > y = y < x
+
+infix 0 _<_
+infix 0 _>_
+
+
+
+Fin-isomorphism-Σ< : (n : ℕ) → Fin n ≅ (Σ k ꞉ ℕ , k < n)
+Fin-isomorphism-Σ< n = record { bijection = f n ; bijectivity = f-is-bijection n }
+ where
+  f : (n : ℕ) → Fin n → (Σ k ꞉ ℕ , k < n)
+  f (suc n) zero = 0 , 0-smallest
+  f (suc n) (suc x) with f n x 
+  ... | m , m<n = suc m , suc-preserves-< m<n
+
+  g : (n : ℕ) → (Σ k ꞉ ℕ , k < n) → Fin n
+  g (suc n) (zero , k<n) = zero
+  g (suc n) (suc k , suc-preserves-< k<n) = suc (g n (k , k<n))
+
+  gf : (n : ℕ) → g n ∘ f n ∼ id
+  gf (suc n) zero = refl ((g (suc n) ∘ f (suc n)) zero)
+  gf (suc n) (suc x) = ap suc (gf n x)
+
+  fg : (n : ℕ) → f n ∘ g n ∼ id
+  fg (suc n) (zero , 0-smallest) = refl (zero , 0-smallest)
+  fg (suc n) (suc m , suc-preserves-< m<n) = ap (sucSigma n) (fg n (m , m<n))
+    where
+        sucSigma : ∀ n → (Σ k ꞉ ℕ , k < n) → (Σ k ꞉ ℕ , k < suc(n))
+        sucSigma _ (k , k<n) = suc k , suc-preserves-< k<n
+
+ 
   f-is-bijection : (n : ℕ) → is-bijection (f n)
   f-is-bijection n = record { inverse = g n ; η = gf n ; ε = fg n}
 ```
