@@ -47,22 +47,27 @@ A property of two variables like `A` above is referred to as a *relation*. The a
 
 As an exercise, you may try to rewrite the following definitions to use `≡-nondep-elim` instead of pattern matching on `refl`:
 ```agda
+transport : {X : Type} (A : X → Type)
+          → {x y : X} → x ≡ y → A x → A y
+-- transport A {x} {y} = ≡-nondep-elim (λ a b → A a → A b) (λ _ z → z) x y
+transport A (refl x) a = a
+
 trans : {A : Type} {x y z : A} → x ≡ y → y ≡ z → x ≡ z
+-- trans {A} {x} xy yz = transport (λ w → x ≡ w) yz xy
 trans p (refl y) = p
 
 sym : {A : Type} {x y : A} → x ≡ y → y ≡ x
+-- sym {_} {x} {y} = ≡-nondep-elim (λ a b → b ≡ a) refl x y 
 sym (refl x) = refl x
 
 ap : {A B : Type} (f : A → B) {x y : A} → x ≡ y → f x ≡ f y
+-- ap f {x} {y} =  ≡-nondep-elim (λ a b → f a ≡ f b) (λ z → refl (f z)) x y 
 ap f (refl x) = refl (f x)
 
 ap₂ : {A B C : Type} (f : A → B → C) {x x' : A} {y y' : B}
     → x ≡ x' → y ≡ y' → f x y ≡ f x' y'
 ap₂ f (refl x) (refl y) = refl (f x y)
 
-transport : {X : Type} (A : X → Type)
-          → {x y : X} → x ≡ y → A x → A y
-transport A (refl x) a = a
 ```
 We have already seen the first three. In the literature, `ap` is often called `cong`. In logical terms, the last one, often called `subst` in the literature, says that if `x` is equal `y` and `A x` holds, then so does `A y`. That is, we can substitute equals for equals in logical statements.
 
