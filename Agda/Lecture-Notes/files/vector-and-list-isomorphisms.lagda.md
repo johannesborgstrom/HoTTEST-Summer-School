@@ -10,6 +10,7 @@ Notes originally written for the module *Advanced Functional Programming* of the
 module vector-and-list-isomorphisms where
 
 open import prelude
+open import natural-numbers-functions
 ```
 -->
 # Vector and list isomorphisms
@@ -25,16 +26,24 @@ lists-from-vectors : {A : Type} → List A ≅ (Σ n ꞉ ℕ , Vector A n)
 lists-from-vectors {A} = record { bijection = f ; bijectivity = f-is-bijection }
  where
   f : List A → Σ n ꞉ ℕ , Vector A n
-  f = {!!}
+  f [] = 0 , []
+  f (x :: xs) with f xs 
+  ... | (n , vec) = suc n , x :: vec
 
   g : (Σ n ꞉ ℕ , Vector A n) → List A
-  g = {!!}
+  g (_ , []) = []
+  g (suc n , x :: vec) = x :: g (n , vec)
 
   gf : g ∘ f ∼ id
-  gf = {!!}
+  gf [] = refl []
+  gf (x :: xs) = ap (x ::_) (gf xs)
 
   fg : f ∘ g ∼ id
-  fg = {!!}
+  fg (0 , []) = refl (zero , [])
+  fg (suc n , x :: vec) = ap addx (fg (n , vec))
+    where
+      addx : (Σ m ꞉ ℕ , Vector A m) → (Σ m ꞉ ℕ , Vector A m)
+      addx (n , xs) = suc n , x :: xs 
 
   f-is-bijection : is-bijection f
   f-is-bijection = record { inverse = g ; η = gf ; ε = fg }
@@ -45,23 +54,52 @@ lists-from-vectors {A} = record { bijection = f ; bijectivity = f-is-bijection }
 ```agda
 open import List-functions
 
+data Singleton {A : Set} (x : A) : Set where
+  _with≡_ : (y : A) → x ≡ y → Singleton x
+
+inspect : ∀ {A : Set} (x : A) → Singleton x
+inspect x = x with≡ refl x
+
 vectors-from-lists : {A : Type} (n : ℕ) → Vector A n ≅ (Σ xs ꞉ List A , (length xs ≡ n))
-vectors-from-lists {A} n = record { bijection = f ; bijectivity = f-is-bijection }
+vectors-from-lists {A} n = record { bijection = f' n ; bijectivity = f-is-bijection }
  where
-  f : {!!} → {!!}
-  f = {!!}
+  f' : ∀ m → Vector A m → Σ xs ꞉ List A , (length xs ≡ m)
+  f' 0 [] = [] , refl 0
+  f' (suc m) (x :: vec) with f' m vec
+  ... | (xs , lxsn) = (x :: xs) , ap suc lxsn
 
-  g : {!!} → {!!}
-  g = {!!}
+  pred-suc-id : ∀ {m n : ℕ} → m ≡ n → pred (suc m) ≡ n
+  pred-suc-id r = r
 
-  gf : g ∘ f ∼ id
-  gf = {!!}
+  lift-pred-suc-id : ∀ {m n : ℕ} → (m≡n : m ≡ n) → ap pred (ap suc m≡n) ≡ m≡n
+  lift-pred-suc-id {m} {n} m≡n = ≡-elim (λ x y r → {!!}) (λ x → {!!}) m n (pred-suc-id m≡n)
 
-  fg : f ∘ g ∼ id
-  fg = {!!}
+  g' : ∀ m → ( Σ xs ꞉ List A , (length xs ≡ m)) →  Vector A m
+  g' zero (_ , _) = [] 
+  g' (suc m) (x :: xs , lxsn) = x :: g' m (xs , ap pred lxsn)
 
-  f-is-bijection : is-bijection f
-  f-is-bijection = record { inverse = g ; η = gf ; ε = fg }
+  gf : ∀ m → (g' m) ∘ (f' m) ∼ id
+  gf zero [] = refl []
+  gf (suc m) (x :: xs) with gf m xs
+  ... | IH = ap (x ::_ ) ((g' m (f' m xs .pr₁ , ap pred (ap suc (f' m xs .pr₂))))
+                   ≡⟨ ap (λ z → g' m (f' m xs .pr₁ , z)) (lift-pred-suc-id (f' m xs .pr₂)) ⟩
+                       (g' m (f' m xs .pr₁ , f' m xs .pr₂))
+                   ≡⟨ IH ⟩
+                       xs
+                   ∎)
+
+
+  fg : ∀ m → (f' m) ∘ (g' m) ∼ id
+  fg zero ([] , refl zero) = refl ([] , refl zero)
+  fg (suc m) (x :: xs , lxsn) with fg m (xs , ap pred lxsn)
+  ... | IH = ap {! addx !}  IH
+    where
+      addx : (Σ ys ꞉ List A , (length ys ≡ m)) → (Σ ys ꞉ List A , (length ys ≡ suc m))
+      addx (ys , p) with inspect (length ys)
+      ... | _ with≡ _ = x :: ys , ap suc p
+
+  f-is-bijection : is-bijection (f' n)
+  f-is-bijection = record { inverse = g' n ; η = gf n ; ε = fg n }
 ```
 
 ## The types of lists and vectors can be defined in basic MLTT
