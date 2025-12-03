@@ -54,42 +54,67 @@ lists-from-vectors {A} = record { bijection = f ; bijectivity = f-is-bijection }
 ```agda
 open import List-functions
 
+PathFrom : {A : Set} -> A -> Set
+PathFrom {A} M = Σ y ꞉ A , M ≡ y
+
+J' : (A : Set) (M : A) (C : PathFrom M -> Set)
+      -> C (M , refl M) 
+      -> (P : PathFrom M) -> C P
+J' A M C b (.M , refl M) = b
+
+
+EPrefl : ∀ {A : Set} {M : A} → (P : PathFrom M) → P ≡ (M , refl M)
+EPrefl {A} {M} = J' A M (λ P' → P' ≡ (M , refl M)) (refl (M , refl M))
+
+EP : ∀ {A : Set} {M : A} → (P1 P2 : PathFrom M) → P1 ≡ P2
+EP {A} {M} P1 P2 = P1 ≡⟨ EPrefl P1 ⟩ (M , refl M) ≡⟨ sym (EPrefl P2) ⟩ P2 ∎
+
+
 data Singleton {A : Set} (x : A) : Set where
   _with≡_ : (y : A) → x ≡ y → Singleton x
 
 inspect : ∀ {A : Set} (x : A) → Singleton x
 inspect x = x with≡ refl x
 
+
+
 vectors-from-lists : {A : Type} (n : ℕ) → Vector A n ≅ (Σ xs ꞉ List A , (length xs ≡ n))
-vectors-from-lists {A} n = record { bijection = f' n ; bijectivity = f-is-bijection }
+vectors-from-lists {A} n = record { bijection = f n ; bijectivity = f-is-bijection n }
  where
-  f' : ∀ m → Vector A m → Σ xs ꞉ List A , (length xs ≡ m)
-  f' 0 [] = [] , refl 0
-  f' (suc m) (x :: vec) with f' m vec
+  f : ∀ m → Vector A m → Σ xs ꞉ List A , (length xs ≡ m)
+  f 0 [] = [] , refl 0
+  f (suc m) (x :: vec) with f m vec
   ... | (xs , lxsn) = (x :: xs) , ap suc lxsn
 
   pred-suc-id : ∀ {m n : ℕ} → m ≡ n → pred (suc m) ≡ n
   pred-suc-id r = r
 
   lift-pred-suc-id : ∀ {m n : ℕ} → (m≡n : m ≡ n) → ap pred (ap suc m≡n) ≡ m≡n
-  lift-pred-suc-id {m} {n} m≡n = ≡-elim (λ x y r → {!!}) (λ x → {!!}) m n (pred-suc-id m≡n)
+  lift-pred-suc-id {m} {n} m≡n = ap {!!} ep 
+    where
+      ep : (n , ap pred (ap suc m≡n)) ≡ (n , m≡n)
+      ep = EP {ℕ} {m} (n , ap pred (ap suc m≡n)) (n , m≡n) 
+  -- ≡-elim (λ x y r → {!!}) (λ x → {!!}) m n {!!}
 
-  g' : ∀ m → ( Σ xs ꞉ List A , (length xs ≡ m)) →  Vector A m
-  g' zero (_ , _) = [] 
-  g' (suc m) (x :: xs , lxsn) = x :: g' m (xs , ap pred lxsn)
+  lift-compose-refl : (f g : ℕ → ℕ) → ∀ n → ap f (ap g (refl n)) ≡ refl (f (g n))
+  lift-compose-refl f g n = refl (ap f (ap g (refl n)))
 
-  gf : ∀ m → (g' m) ∘ (f' m) ∼ id
+  g : ∀ m → ( Σ xs ꞉ List A , (length xs ≡ m)) →  Vector A m
+  g zero (_ , _) = [] 
+  g (suc m) (x :: xs , lxsn) = x :: g m (xs , ap pred lxsn)
+
+  gf : ∀ m → (g m) ∘ (f m) ∼ id
   gf zero [] = refl []
   gf (suc m) (x :: xs) with gf m xs
-  ... | IH = ap (x ::_ ) ((g' m (f' m xs .pr₁ , ap pred (ap suc (f' m xs .pr₂))))
-                   ≡⟨ ap (λ z → g' m (f' m xs .pr₁ , z)) (lift-pred-suc-id (f' m xs .pr₂)) ⟩
-                       (g' m (f' m xs .pr₁ , f' m xs .pr₂))
+  ... | IH = ap (x ::_ ) ((g m (f m xs .pr₁ , ap pred (ap suc (f m xs .pr₂))))
+                   ≡⟨ ap (λ z → g m (f m xs .pr₁ , z)) (lift-pred-suc-id (f m xs .pr₂)) ⟩
+                       (g m (f m xs .pr₁ , f m xs .pr₂))
                    ≡⟨ IH ⟩
                        xs
                    ∎)
 
 
-  fg : ∀ m → (f' m) ∘ (g' m) ∼ id
+  fg : ∀ m → (f m) ∘ (g m) ∼ id
   fg zero ([] , refl zero) = refl ([] , refl zero)
   fg (suc m) (x :: xs , lxsn) with fg m (xs , ap pred lxsn)
   ... | IH = ap {! addx !}  IH
@@ -98,8 +123,8 @@ vectors-from-lists {A} n = record { bijection = f' n ; bijectivity = f-is-biject
       addx (ys , p) with inspect (length ys)
       ... | _ with≡ _ = x :: ys , ap suc p
 
-  f-is-bijection : is-bijection (f' n)
-  f-is-bijection = record { inverse = g' n ; η = gf n ; ε = fg n }
+  f-is-bijection : ∀ n → is-bijection (f n)
+  f-is-bijection n = record { inverse = g n ; η = gf n ; ε = fg n }
 ```
 
 ## The types of lists and vectors can be defined in basic MLTT

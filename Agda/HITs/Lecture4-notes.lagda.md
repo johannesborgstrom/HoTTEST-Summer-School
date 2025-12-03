@@ -92,11 +92,16 @@ above and loop:
 ```agda
 example : (loop ∙ ! loop ∙ loop ∙ ! loop  ∙ loop) ≡ loop [ base ≡ base ]
 example = loop ∙ ! loop ∙ loop ∙ ! loop  ∙ loop  ≡⟨ refl _ ⟩
-          (((loop ∙ ! loop) ∙ loop) ∙ ! loop)  ∙ loop  ≡⟨ ap (\ H → H ∙ loop ∙ ! loop ∙ loop) (!-inv-r loop)  ⟩
-          refl _ ∙ loop ∙ ! loop ∙ loop                ≡⟨  ap (\ H → H ∙ ! loop ∙ loop) (∙unit-l (loop))  ⟩
-          loop ∙ ! loop ∙ loop                         ≡⟨  ! (∙assoc _ (! loop) loop)  ⟩
-          loop ∙ (! loop ∙ loop)                       ≡⟨  ap (\ H → loop ∙ H) (!-inv-l loop)  ⟩
-          loop ∙ (refl _)                              ≡⟨ refl _ ⟩ 
+          (((loop ∙ ! loop) ∙ loop) ∙ ! loop)  ∙ loop
+               ≡⟨ ap (\ H → H ∙ loop ∙ ! loop ∙ loop) (!-inv-r loop)  ⟩
+          refl _ ∙ loop ∙ ! loop ∙ loop
+               ≡⟨  ap (\ H → H ∙ ! loop ∙ loop) (∙unit-l (loop))  ⟩
+          loop ∙ ! loop ∙ loop
+               ≡⟨  ! (∙assoc _ (! loop) loop)  ⟩
+          loop ∙ (! loop ∙ loop)
+               ≡⟨  ap (\ H → loop ∙ H) (!-inv-l loop)  ⟩
+          loop ∙ (refl _)
+               ≡⟨ refl _ ⟩ 
           loop ∎  
 ```
 
