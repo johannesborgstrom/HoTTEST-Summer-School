@@ -8,7 +8,7 @@
 module Pool.Homework.homework3 where
 
 open import prelude
-open import Pool.Lab.lab3-solutions
+open import Pool.Lab.lab3-solutions hiding (𝟘-nondep-elim)
 ```
 
 ## Part I: Associativity and Commutativity of ∔ and ×
@@ -25,7 +25,9 @@ and commutative.
 
 ```agda
 ∔-assoc : {A B C : Type} → A ∔ (B ∔ C) → (A ∔ B) ∔ C
-∔-assoc = {!!}
+∔-assoc (inl a)       = inl (inl a)
+∔-assoc (inr (inl b)) = inl (inr b)
+∔-assoc (inr (inr c)) = inr c
 ```
 
 ### Exercise 1.2
@@ -34,7 +36,7 @@ and commutative.
 
 ```agda
 ×-assoc : {A B C : Type} → A × (B × C) → (A × B) × C
-×-assoc = {!!}
+×-assoc (a , (b , c)) = (a , b) , c
 ```
 
 ### Exercise 1.3
@@ -43,7 +45,8 @@ and commutative.
 
 ```agda
 ∔-comm : {A B : Type} → A ∔ B → B ∔ A
-∔-comm = {!!}
+∔-comm (inl a) = inr a
+∔-comm (inr b) = inl b
 ```
 ### Exercise 1.4
 
@@ -51,7 +54,7 @@ and commutative.
 
 ```agda
 ×-comm : {A B : Type} → A × B → B × A
-×-comm = {!!}
+×-comm (a , b) = b , a
 ```
 
 ## Part II: Law of excluded middle and double-negation elimination
@@ -66,7 +69,7 @@ contradiction.
 
 ```agda
 not-A-and-not-A : {A : Type} → ¬ (A × ¬ A)
-not-A-and-not-A = {!!}
+not-A-and-not-A (a , na) = na a
 ```
 
 **Complete** the proof that `¬ (A x ¬ A)`.
@@ -77,7 +80,7 @@ Furthermore, if we had both `A` and `¬ A`, we could prove anything.
 
 ```agda
 A-and-not-A-implies-B : {A B : Type} → A × ¬ A → B
-A-and-not-A-implies-B p = {!!}
+A-and-not-A-implies-B = 𝟘-nondep-elim ∘ not-A-and-not-A
 ```
 
 **Complete** the above statement *without* using pattern matching.
@@ -100,7 +103,7 @@ However, we *can* prove the *double-negation* of `LEM`.
 
 ```agda
 not-not-LEM : {A : Type} → ¬¬ (A ∔ ¬ A)
-not-not-LEM = {!!}
+not-not-LEM f = f (inr (λ z → f (inl z)))
 ```
 
 **Prove** the double-negation of the law of excluded middle.
@@ -120,7 +123,7 @@ DNE = {!!} -- You are not expected to complete this hole.
            -- In fact, it's impossible.
 
 LEM' : {A : Type} → A ∔ ¬ A
-LEM' = {!!}
+LEM' = DNE not-not-LEM
 ```
 
 ### Exercise 2.5
@@ -131,7 +134,9 @@ It is the case, however, that if we had access to `LEM`, we could prove `DNE`.
 
 ```agda
 DNE' : {A : Type} → ¬¬ A → A
-DNE' {A} = {!!}
+DNE' {A} nna with LEM {A}
+... | inl a = a
+... | inr na = 𝟘-nondep-elim (nna na)
 ```
 
 **Complete** `DNE'` using `LEM`.
@@ -146,7 +151,7 @@ Agda.
 
 ```agda
 not-not-DNE : {A : Type} → ¬¬ (¬¬ A → A)
-not-not-DNE {A} = {!!}
+not-not-DNE {A} f = f λ{nna → 𝟘-nondep-elim (nna λ{a → f λ{_ → a}})}
 ```
 
 **Prove** the double-negation of the law of excluded middle.
@@ -161,7 +166,8 @@ not-not-DNE {A} = {!!}
 Σ-∔-distributivity : {A : Type} {B C : A → Type}
                    → (Σ a ꞉ A , (B a ∔ C a))
                    → (Σ a ꞉ A , B a) ∔ (Σ a ꞉ A , C a)
-Σ-∔-distributivity = {!!}
+Σ-∔-distributivity (a , inl b) = inl (a , b)
+Σ-∔-distributivity (a , inr c) = inr (a , c)
 ```
 
 ### Exercise 3.2
@@ -172,7 +178,7 @@ does not exist any `a : A` satisfying `B a` (the type `Σ B` is empty).
 ```agda
 ¬Σ-if-forall-not : {A : Type} {B : A → Type}
                  → ((a : A) → ¬ B a) → ¬ (Σ a ꞉ A , B a)
-¬Σ-if-forall-not = {!!}
+¬Σ-if-forall-not f (a , b) = f a b
 ```
 
 **Complete** the proof of the above statement.
@@ -184,7 +190,7 @@ does not exist any `a : A` satisfying `B a` (the type `Σ B` is empty).
 ```agda
 forall-not-if-¬Σ : {A : Type} {B : A → Type}
                  → ¬ (Σ a ꞉ A , B a) → (a : A) → ¬ B a
-forall-not-if-¬Σ = {!!}
+forall-not-if-¬Σ f a b = f (a , b)
 ```
 
 ### Exercise 3.4
@@ -195,5 +201,6 @@ Finally, **prove** that `Σ` distributes over "for all".
 Π-Σ-distributivity : {A B : Type} {C : A → B → Type}
                    → ((a : A) → (Σ b ꞉ B , C a b))
                    → Σ f ꞉ (A → B) , ((a : A) → C a (f a))
-Π-Σ-distributivity = {!!}
+Π-Σ-distributivity g .pr₁ a = g a .pr₁
+Π-Σ-distributivity g .pr₂ a = g a .pr₂
 ```
