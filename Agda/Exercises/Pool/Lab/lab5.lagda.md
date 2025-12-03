@@ -48,7 +48,8 @@ map f (x :: xs) = f x :: map f xs
 ```agda
 map-preserves-length : {A B : Type} (f : A → B) (xs : List A)
                      → length (map f xs) ≡ length xs
-map-preserves-length = {!!}
+map-preserves-length f [] = refl 0
+map-preserves-length f (x :: xs) = ap suc (map-preserves-length f xs)
 ```
 
 ### Exercise 1.2
@@ -59,7 +60,8 @@ their respective lengths. **Complete** the proof of this fact.
 ```agda
 length-of-++ : {A : Type} (xs ys : List A)
              → length (xs ++ ys) ≡ length xs + length ys
-length-of-++ = {!!}
+length-of-++ [] ys = refl (length ys)
+length-of-++ (x :: xs) ys = ap suc (length-of-++ xs ys)
 ```
 
 ### Exercise 1.3
@@ -84,10 +86,22 @@ prefix of the list `ys`.
 `ys`, relating the two notions above.
 
 ```agda
+
+prefix-same : {A : Type} (xs ys : List A) (x : A) (y : A) → ((x :: xs) ≼' (y :: ys)) → (x ≡ y)
+prefix-same [] ys x _ (_ , refl (x :: ys)) = refl x
+prefix-same (_ :: _) ys x _ (_ , refl _) = refl x
+
+prefix-:: : {A : Type} {xs ys : List A} {x : A} {y : A} → ((x :: xs) ≼' (y :: ys)) → (xs ≼' ys)
+prefix-:: {A} {xs} (zs , refl _ ) = zs , refl (xs ++ zs)
+
+
+
 length-of-prefix : {A : Type} (xs ys : List A)
                  → xs ≼' ys
                  → length xs ≤' length ys
-length-of-prefix = {!!}
+length-of-prefix [] ys _ = length ys , refl (length ys)
+length-of-prefix (x :: xs) (_ :: ys) (suf , en) with length-of-prefix xs ys (prefix-:: (suf , en) )
+... | diff , eq = diff , ap suc eq
 ```
 
 ### Exercise 1.4
@@ -114,7 +128,7 @@ because it realizes that `[]` does not satisfy `is-nonempty`.
 
 ```agda
 head : {A : Type} (xs : List A) → is-nonempty xs → A
-head = {!!}
+head (x :: xs) _ = x
 ```
 
 **Complete** the definition of `head` yourself.
@@ -124,7 +138,7 @@ head = {!!}
 ```agda
 length-of-tail : {A : Type} (xs : List A) (p : 1 ≤' length xs)
                → 1 + length (tail xs p) ≡ length xs
-length-of-tail = {!!}
+length-of-tail (x :: xs) p = refl (1 + length (tail (x :: xs) p))
 ```
 
 **Prove** that the length of a list is obtained by adding 1 to the length of the
@@ -134,11 +148,11 @@ tail.
 
 ```agda
 ≤'-suc-lemma : (n : ℕ) → n ≤' (1 + n)
-≤'-suc-lemma = {!!}
+≤'-suc-lemma n = 1 , +-comm n 1
 
 length-of-tail-decreases : {A : Type} (xs : List A) (p : 1 ≤' length xs)
                          → length (tail xs p) ≤' length xs
-length-of-tail-decreases = {!!}
+length-of-tail-decreases (x :: xs) _ = ≤'-suc-lemma (length xs)
 ```
 
 **Complete** the proof of the following lemma and use it to prove that the
@@ -160,16 +174,16 @@ formalise the isomorphism.
 ×-iso X Y = record { bijection = f ; bijectivity = f-is-bijection }
  where
   f : X × Y → Y × X
-  f = {!!}
+  f (x , y) = y , x
 
   g : Y × X → X × Y
-  g = {!!}
+  g (x , y) = y , x
 
   gf : g ∘ f ∼ id
-  gf = {!!}
+  gf p = refl p
 
   fg : f ∘ g ∼ id
-  fg = {!!}
+  fg p = refl p
 
   f-is-bijection : is-bijection f
   f-is-bijection = record { inverse = g ; η = gf ; ε = fg }
@@ -184,16 +198,20 @@ formalise the isomorphism.
 +-iso X Y = record { bijection = f ; bijectivity = f-is-bijection }
  where
   f : X ∔ Y → Y ∔ X
-  f = {!!}
+  f (inl x) = inr x
+  f (inr x) = inl x
 
   g : Y ∔ X → X ∔ Y
-  g = {!!}
+  g (inl x) = inr x
+  g (inr x) = inl x
 
   gf : g ∘ f ∼ id
-  gf = {!!}
+  gf (inl x) = refl (inl x)
+  gf (inr x) = refl (inr x)
 
   fg : f ∘ g ∼ id
-  fg = {!!}
+  fg (inl x) = refl (inl x)
+  fg (inr x) = refl (inr x)
 
   f-is-bijection : is-bijection f
   f-is-bijection = record { inverse = g ; η = gf ; ε = fg }
@@ -202,21 +220,29 @@ formalise the isomorphism.
 ### Exercise 2.3
 
 ```agda
+cons-vec :  {A : Type} → ∀ x  → (Σ n ꞉ ℕ , Vector A n) →  (Σ n ꞉ ℕ , Vector A n)
+cons-vec x (m , vxm ) = suc m , x :: vxm
+
 lists-from-vectors : {A : Type} → List A ≅ (Σ n ꞉ ℕ , Vector A n)
 lists-from-vectors {A}
  = record { bijection = f ; bijectivity = f-is-bijection }
  where
   f : List A → Σ n ꞉ ℕ , Vector A n
-  f = {!!}
+  f [] = 0 , []
+  f (x :: xs) with f xs
+  ... | (n , vxs) = (suc n) , x :: vxs
 
   g : Σ n ꞉ ℕ , Vector A n → List A
-  g = {!!}
+  g (_ , []) = []
+  g (suc n , x :: vxs) = x :: g (n , vxs)
 
   gf : g ∘ f ∼ id
-  gf = {!!}
+  gf [] = refl []
+  gf (x :: xs) = ap (x ::_) (gf xs)
 
   fg : f ∘ g ∼ id
-  fg = {!!}
+  fg (zero , []) = refl (zero , [])
+  fg (suc n , x :: vxs) = ap (cons-vec x) (fg (n , vxs))
 
   f-is-bijection : is-bijection f
   f-is-bijection = record { inverse = g ; η = gf ; ε = fg }
@@ -235,9 +261,10 @@ Hint: The statement of Exercise 2.3b may help you.
 open _≅_
 
 lfv-preserves-length : {A : Type} (xs : List A)
-                     → fst (bijection lists-from-vectors xs)
+                     → pr₁ (bijection lists-from-vectors xs)
                      ≡ length xs
-lfv-preserves-length = {!!}
+lfv-preserves-length {A} [] = refl (pr₁ (bijection (lists-from-vectors {A}) []))
+lfv-preserves-length (x :: xs) = ap suc (lfv-preserves-length xs)
 ```
 
 Notice how `bijection` extracts the function `f` you defined in
@@ -255,6 +282,9 @@ In the lecture notes, you have seen the predicates `is-even` and `is-odd`:
 is-even is-odd : ℕ → Type
 is-even x = Σ y ꞉ ℕ , x ≡ 2 * y
 is-odd  x = Σ y ꞉ ℕ , x ≡ 1 + 2 * y
+
+1-not-even : ¬ (is-even 1)
+1-not-even (suc k , p) = (λ e → zero-is-not-suc (0 ≡⟨ e ⟩ k + suc k ≡⟨ +-step k k ⟩ suc (k + k) ∎ )) (ap pred p)
 ```
 
 In these exercises, we will define a Boolean-valued version of the `is-even`
@@ -277,8 +307,8 @@ evenness-lemma₁ : (n : ℕ) → is-even (2 + n) → is-even n
 evenness-lemma₁ n (suc k , p) = k , goal
  where
   subgoal : suc (suc n) ≡ suc (suc (2 * k))
-  subgoal = suc (suc n)       ≡⟨ {!!} ⟩
-            suc k + suc k     ≡⟨ {!!} ⟩
+  subgoal = suc (suc n)       ≡⟨ p ⟩
+            suc k + suc k     ≡⟨ ap suc (+-step k k) ⟩
             suc ((suc k) + k) ∎
 
   goal : n ≡ 2 * k
@@ -288,8 +318,8 @@ evenness-lemma₂ : (n : ℕ) → is-even n → is-even (2 + n)
 evenness-lemma₂ n (k , p) = suc k , goal
  where
   goal : 2 + n ≡ 2 * suc k
-  goal = 2 + n         ≡⟨ {!!} ⟩
-         2 + (k + k)   ≡⟨ {!!} ⟩
+  goal = 2 + n         ≡⟨ ap suc ( ap suc p) ⟩
+         2 + (k + k)   ≡⟨ ap suc ((+-step k k)⁻¹) ⟩
          suc k + suc k ∎
 ```
 
@@ -301,7 +331,9 @@ evenness-lemma₂ n (k , p) = suc k , goal
 
 ```agda
 even⇒check-even : (n : ℕ) → is-even n → check-even n ≡ true
-even⇒check-even = {!!}
+even⇒check-even zero (zero , p) = refl (check-even zero)
+even⇒check-even (suc zero) e = 𝟘-nondep-elim (1-not-even e)
+even⇒check-even (suc (suc n)) ise = even⇒check-even n (evenness-lemma₁ n ise)
 ```
 
 **Prove** that if `check-even n ≡ true` then `is-even n` is inhabited:
