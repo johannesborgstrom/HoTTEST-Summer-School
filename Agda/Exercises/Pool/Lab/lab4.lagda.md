@@ -21,7 +21,8 @@ First, we will prove the following lemma.
 ```agda
 reverse-lemma : {X : Type} (x : X) (xs : List X)
               → x :: reverse xs ≡ reverse (xs ++ [ x ])
-reverse-lemma = {!!}
+reverse-lemma x [] = refl (x :: reverse [])
+reverse-lemma x (y :: xs) = ap (_++ [ y ]) (reverse-lemma x xs)
 ```
 
 **Prove** the lemma about `reverse`.
@@ -33,11 +34,11 @@ equational reasoning.
 
 ```agda
 reverse-is-involution : {X : Type} → (xs : List X) → xs ≡ reverse (reverse xs)
-reverse-is-involution [] = {!!}
+reverse-is-involution [] = refl []
 reverse-is-involution (x :: xs)
- = x :: xs                       ≡⟨ {!!} ⟩
-   x :: reverse (reverse xs)     ≡⟨ {!!} ⟩
-   reverse (reverse xs ++ [ x ]) ≡⟨ {!!} ⟩
+ = x :: xs                       ≡⟨ ap (x ::_) (reverse-is-involution xs) ⟩
+   x :: reverse (reverse xs)     ≡⟨ reverse-lemma x (reverse xs) ⟩
+   reverse (reverse xs ++ [ x ]) ≡⟨ refl (reverse (reverse xs ++ [ x ])) ⟩
    reverse (reverse (x :: xs))   ∎
 ```
 
@@ -49,7 +50,8 @@ We wish to prove the associativity of `_+_` on the natural numbers.
 
 ```agda
 +-assoc : (x y z : ℕ) → x + (y + z) ≡ (x + y) + z
-+-assoc = {!!}
++-assoc zero y z = refl (zero + y + z)
++-assoc (suc x) y z = ap suc (+-assoc x y z)
 ```
 
 **Complete** the proof that `_+_` is associative.
@@ -91,11 +93,11 @@ prove two little lemmas about `_≤'_`.
 Note that they amount to the constructors of `_≤_`.
 
 ```agda
-≤'-zero : (  y : ℕ) → 0 ≤' y
-≤'-zero = {!!}
+≤'-zero : ( y : ℕ) → 0 ≤' y
+≤'-zero y = y , refl y
 
 ≤'-suc : (x y : ℕ) → x ≤' y → suc x ≤' suc y
-≤'-suc = {!!}
+≤'-suc x y (k , eq)= k , ap suc eq
 ```
 
 **Prove** the two little lemmas about `_≤'_`.
@@ -106,7 +108,9 @@ We now prove that the first definition implies the second.
 
 ```agda
 ≤-prime : (x y : ℕ) → x ≤ y → x ≤' y
-≤-prime = {!!}
+≤-prime zero     y      (≤-zero .y)   = y , refl (zero + y)
+≤-prime (suc x) (suc y) (≤-suc x y e) with ≤-prime x y e
+... | (n , p) = n , ap suc p
 ```
 
 **Prove** that `x ≤ y` implies `x ≤' y` using the little lemmas from 3.1.
@@ -116,8 +120,13 @@ We now prove that the first definition implies the second.
 The other direction is slightly trickier.
 
 ```agda
+pred : ℕ → ℕ
+pred zero = zero
+pred (suc n) = n
+
 ≤-unprime : (x y : ℕ) → x ≤' y → x ≤ y
-≤-unprime = {!!}
+≤-unprime zero y _ = ≤-zero y
+≤-unprime (suc x) (suc y) (d , eq) = ≤-suc x y (≤-unprime x y (d , ap pred eq))
 ```
 
 **Prove** that `x ≤' y` implies `x ≤ y`.
@@ -133,10 +142,22 @@ both our definitions of the order.
 
 ```agda
 ≤-trans : (x y z : ℕ) → x ≤ y → y ≤ z → x ≤ z
-≤-trans = {!!}
+≤-trans zero y z (≤-zero y) _ = ≤-zero z
+≤-trans (suc x) (suc y) (suc z) (≤-suc x y ex) (≤-suc y z ez) =
+      ≤-suc x z (≤-trans x y z ex ez)
 
 ≤'-trans : (x y z : ℕ) → x ≤' y → y ≤' z → x ≤' z
-≤'-trans = {!!}
+≤'-trans x y z (k , ek) (l , el) = (k + l) , ekl
+  where
+    ekl : x + k + l ≡ z
+    ekl = x + k + l
+      ≡⟨ +-assoc x k l ⟩
+         (x + k) + l
+      ≡⟨ ap (_+ l) ek ⟩
+         y + l
+      ≡⟨ el ⟩
+         z
+      ∎
 ```
 
 **Complete** the proofs that `_≤_` and `_≤'_` are transitive.
@@ -191,7 +212,10 @@ the `Bool` type has decidable equality:
 
 ```agda
 bool-has-decidable-equality : has-decidable-equality Bool
-bool-has-decidable-equality = {!!}
+bool-has-decidable-equality true true = inl (refl true)
+bool-has-decidable-equality true false = inr λ ()
+bool-has-decidable-equality false true = inr λ ()
+bool-has-decidable-equality false false = inl (refl false)
 ```
 
 ### Exercise 4.2
@@ -200,11 +224,16 @@ bool-has-decidable-equality = {!!}
 the following lemma:
 
 ```agda
-≤-lemma : (m n : ℕ) → suc m ≤ suc n → m ≤ n
-≤-lemma m n (≤-suc m n p) = p
+≤-lemma : {m n : ℕ} → suc m ≤ suc n → m ≤ n
+≤-lemma (≤-suc m n p) = p
 ```
 
 ```agda
 ≤-is-decidable : (m n : ℕ) → is-decidable (m ≤ n)
-≤-is-decidable = {!!}
+≤-is-decidable zero zero = inl (≤-zero zero)
+≤-is-decidable zero (suc n) = inl (≤-zero (suc n))
+≤-is-decidable (suc m) zero = inr λ ()
+≤-is-decidable (suc m) (suc n) with ≤-is-decidable m n
+... | inl m≤n  = inl ( ≤-suc m n m≤n)
+... | inr ¬m≤n = inr λ{ sm≤sn → ¬m≤n (≤-lemma sm≤sn) }
 ```

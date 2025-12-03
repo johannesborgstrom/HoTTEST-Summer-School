@@ -29,10 +29,10 @@ for multiple negations.
 
 ```agda
 ∔-introduction-left  : {A B : Type} → A → A ∔ B
-∔-introduction-left = {!!}
+∔-introduction-left = inl
 
 ∔-introduction-right : {A B : Type} → B → A ∔ B
-∔-introduction-right = {!!}
+∔-introduction-right = inr
 ```
 
 #### Exercise 1.2
@@ -41,7 +41,8 @@ for multiple negations.
 
 ```agda
 ∔-elimination : {A B X : Type} → (A → X) → (B → X) → (A ∔ B → X)
-∔-elimination = {!!}
+∔-elimination f g (inl a) = f a
+∔-elimination f g (inr b) = g b
 ```
 
 ### Section 2: Conjunction
@@ -52,10 +53,10 @@ for multiple negations.
 
 ```agda
 ×-elimination-left : {A B : Type} → A × B → A
-×-elimination-left = {!!}
+×-elimination-left = pr₁
 
 ×-elimination-right : {A B : Type} → A × B → B
-×-elimination-right = {!!}
+×-elimination-right = pr₂
 ```
 
 #### Exercise 2.2
@@ -64,10 +65,10 @@ for multiple negations.
 
 ```agda
 ×-introduction : {A B : Type} → A → B → A × B
-×-introduction = {!!}
+×-introduction a b = a , b
 
 ×-introduction' : {A B X : Type} → (X → A) → (X → B) → (X → A × B)
-×-introduction' = {!!}
+×-introduction' f g x = f x , g x
 ```
 
 ### Section 3: Implication
@@ -78,10 +79,10 @@ for multiple negations.
 
 ```agda
 uncurry : {A B X : Type} → (A → B → X) → (A × B → X)
-uncurry = {!!}
+uncurry f ab = f (ab .pr₁) (ab .pr₂)
 
 curry : {A B X : Type} → (A × B → X) → (A → B → X)
-curry = {!!}
+curry f a b = f (a , b)
 ```
 
 You probably already know `curry` and `uncurry` from Haskell, but notice how we
@@ -94,7 +95,7 @@ that `B` implies `X`, then the conjunction of `A` and `B` implies `X`.
 
 ```
 →-trans : {A B C : Type} → (A → B) → (B → C) → (A → C)
-→-trans = {!!}
+→-trans f g = g ∘ f
 ```
 
 Notice that the proof that implication is transitive is just function
@@ -113,7 +114,7 @@ quodlibet_.
 
 ```agda
 𝟘-nondep-elim : {A : Type} → 𝟘 → A
-𝟘-nondep-elim = {!!}
+𝟘-nondep-elim ()
 ```
 
 #### Exercise 4.2
@@ -122,7 +123,7 @@ quodlibet_.
 
 ```agda
 ¬¬-introduction : {A : Type} → A → ¬¬ A
-¬¬-introduction = {!!}
+¬¬-introduction a na = na a
 ```
 
 #### Exercise 4.3
@@ -132,10 +133,10 @@ single negation.
 
 ```agda
 not-implies-not³ : {A : Type} → ¬ A → ¬¬¬ A
-not-implies-not³ = {!!}
+not-implies-not³ na nna = nna na
 
 not³-implies-not : {A : Type} → ¬¬¬ A → ¬ A
-not³-implies-not = {!!}
+not³-implies-not nnna a = nnna λ{na → na a}
 ```
 
 #### Exercise 4.4
@@ -144,7 +145,7 @@ not³-implies-not = {!!}
 
 ```agda
 contraposition : {A B : Type} → (A → B) → ¬ B → ¬ A
-contraposition = {!!}
+contraposition f nb = nb ∘ f
 ```
 
 #### Exercise 4.5
@@ -153,11 +154,17 @@ Use `contraposition` to **complete** the following two proofs.
 
 ```agda
 ¬¬-functor : {A B : Type} → (A → B) → ¬¬ A → ¬¬ B
-¬¬-functor = {!!}
+¬¬-functor = contraposition ∘ contraposition
 
 ¬¬-kleisli : {A B : Type} → (A → ¬¬ B) → ¬¬ A → ¬¬ B
-¬¬-kleisli = {!!}
+¬¬-kleisli f = not³-implies-not ∘ (¬¬-functor f)
 ```
+¬¬-kleisli {A} {B} f nna nb = nna (g nb)
+  where
+    g : ¬ B → ¬ A
+    g = (contraposition f) ∘ ¬¬-introduction
+
+
 {-
  Better HINT:
  start with f : A → ¬¬ B
@@ -183,10 +190,11 @@ proving these (and some other similar laws) for Agda types.
 
 ```agda
 de-morgan₁ : {A B : Type} → ¬ (A ∔ B) → ¬ A × ¬ B
-de-morgan₁ = {!!}
+de-morgan₁ nab = (nab ∘ inl) , (nab ∘ inr)
 
 de-morgan₂ : {A B : Type} → ¬ A ∔ ¬ B → ¬ (A × B)
-de-morgan₂ = {!!}
+de-morgan₂ (inl na) = na ∘ pr₁
+de-morgan₂ (inr nb) = nb ∘ pr₂
 ```
 
 #### Exercise 5.2
@@ -195,10 +203,12 @@ de-morgan₂ = {!!}
 
 ```agda
 ¬-and-+-exercise₁ : {A B : Type} → ¬ A ∔ B → A → B
-¬-and-+-exercise₁ = {!!}
+¬-and-+-exercise₁ (inl na) = 𝟘-nondep-elim ∘ na
+¬-and-+-exercise₁ (inr b)  = λ _ → b
 
 ¬-and-+-exercise₂ : {A B : Type} → ¬ A ∔ B → ¬ (A × ¬ B)
-¬-and-+-exercise₂ = {!!}
+¬-and-+-exercise₂ (inl na) (a , _)  = na a
+¬-and-+-exercise₂ (inr b)  (_ , nb) = nb b
 ```
 
 #### Exercise 5.3
@@ -207,10 +217,12 @@ de-morgan₂ = {!!}
 
 ```agda
 distributivity₁ : {A B C : Type} → (A × B) ∔ C → (A ∔ C) × (B ∔ C)
-distributivity₁ = {!!}
+distributivity₁ (inl (a , b)) = inl a , inl b
+distributivity₁ (inr c) = inr c , inr c
 
 distributivity₂ : {A B C : Type} → (A ∔ B) × C → (A × C) ∔ (B × C)
-distributivity₂ = {!!}
+distributivity₂ (inl a , c) = inl (a , c)
+distributivity₂ (inr b , c) = inr (b , c)
 ```
 
 ## Part II: Logic with quantifiers
@@ -223,10 +235,10 @@ distributivity₂ = {!!}
 
 ```agda
 Σ-introduction : {A : Type} {B : (A → Type)} → (a : A) → B a → (Σ a ꞉ A , B a)
-Σ-introduction = {!!}
+Σ-introduction a b = a , b
 
 Σ-to-× : {A : Type} {B : (A → Type)} → ((a , _) : (Σ a ꞉ A , B a)) → A × B a
-Σ-to-× = {!!}
+Σ-to-× (a , b) = a , b
 ```
 
 #### Exercise 1.2
@@ -235,7 +247,8 @@ distributivity₂ = {!!}
 
 ```agda
 Σ-on-Bool : {B : Bool → Type} → (Σ x ꞉ Bool , B x) → B true ∔ B false
-Σ-on-Bool = {!!}
+Σ-on-Bool (true  , bx) = inl bx
+Σ-on-Bool (false , bx) = inr bx
 ```
 
 ### Section 2: Products
@@ -246,7 +259,7 @@ Complete the proof.
 
 ```agda
 Π-apply : {A : Type} {B : (A → Type)} → ((a : A) → B a) → (a : A) → B a
-Π-apply = {!!}
+Π-apply f a = f a
 ```
 
 #### Exercise 2.2
@@ -257,5 +270,5 @@ Complete the proof.
 Π-→ : {A : Type} {B C : A → Type}
     → ((a : A) → B a → C a)
     → ((a : A) → B a) → ((a : A) → C a)
-Π-→ = {!!}
+Π-→ f g a = f a (g a)
 ```
