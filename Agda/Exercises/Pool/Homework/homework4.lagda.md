@@ -8,6 +8,8 @@ module Pool.Homework.homework4 where
 
 open import prelude
 open import List-functions hiding (++-assoc)
+open import natural-numbers-functions using (+-base)
+
 ```
 
 ## Part I: Commutativity of addition of natural numbers
@@ -18,14 +20,16 @@ The following proof skeleton has been provided for you, using
 [notation for equational reasoning](https://git.cs.bham.ac.uk/mhe/afp-learning/-/blob/main/files/LectureNotes/files/identity-type.lagda.md#notation-for-equality-reasoning).
 
 ```agda
+
+
 +-comm : (x y : ℕ) → x + y ≡ y + x
-+-comm 0       0       = {!!}
-+-comm 0       (suc y) = {!!}
-+-comm (suc x) 0       = {!!}
++-comm 0       0       = refl 0
++-comm 0       (suc y) = ap suc ((+-base  y)⁻¹)
++-comm (suc x) 0       = ap suc (+-base  x)
 +-comm (suc x) (suc y)
- = suc (x + suc y)     ≡⟨ {!!} ⟩
-   suc (suc (y + x))   ≡⟨ {!!} ⟩
-   suc (suc x + y)     ≡⟨ {!!} ⟩
+ = suc (x + suc y)     ≡⟨ ap suc (+-comm x (suc y)) ⟩
+   suc (suc (y + x))   ≡⟨ ap suc (ap suc (+-comm y x)) ⟩
+   suc (suc x + y)     ≡⟨ ap suc (+-comm (suc x) y) ⟩
    suc (y + suc x)     ∎
 ```
 
@@ -111,7 +115,11 @@ include a useful exercise on associativity.
 ```agda
 ++-assoc : {X : Type} (xs ys zs : List X)
          → (xs ++ ys) ++ zs ≡ xs ++ (ys ++ zs)
-++-assoc = {!!}
+++-assoc [] ys zs = refl (ys ++ zs)
+++-assoc (x :: xs) ys zs =
+         x :: (xs ++ ys) ++ zs
+              ≡⟨ ap (x ::_ ) (++-assoc xs ys zs) ⟩
+         x :: xs ++ ys ++ zs ∎
 ```
 
 ### Exercise 2.2
@@ -125,9 +133,9 @@ transitive.
 ≼'-is-transitive xs ys zs (l , e) (l' , e') = ((l ++ l') , e'')
  where
   e'' : xs ++ l ++ l' ≡ zs
-  e'' = xs ++ (l ++ l') ≡⟨ {!!} ⟩
-        (xs ++ l) ++ l' ≡⟨ {!!} ⟩
-        ys ++ l'        ≡⟨ {!!} ⟩
+  e'' = xs ++ (l ++ l') ≡⟨ (++-assoc xs l l')⁻¹ ⟩
+        (xs ++ l) ++ l'  ≡⟨ ap (_++  l') e ⟩
+        ys ++ l'        ≡⟨ e' ⟩
         zs              ∎
 ```
 
@@ -137,8 +145,8 @@ transitive.
 
 ```agda
 ≼-++ : {X : Type} (xs ys : List X) → xs ≼ (xs ++ ys)
-≼-++ [] ys        = {!!}
-≼-++ (x :: xs) ys = {!!}
+≼-++ [] ys        = []-is-prefix ys
+≼-++ (x :: xs) ys = ::-is-prefix x xs (xs ++ ys) (≼-++ xs ys)
 ```
 
 ### Exercise 2.4
@@ -149,7 +157,7 @@ transitive.
 
 ```agda
 ≼-unprime : {X : Type} (xs ys : List X) → xs ≼' ys → xs ≼ ys
-≼-unprime = {!!}
+≼-unprime xs ys (suff , e) = transport (xs ≼_) e (≼-++ xs suff)
 ```
 
 ### Exercise 2.5
@@ -158,12 +166,12 @@ transitive.
 
 ```agda
 ≼'-[] : {X : Type} (xs : List X) → [] ≼' xs
-≼'-[] = {!!}
+≼'-[] xs = xs , refl xs
 
 ≼'-cons : {X : Type} (x : X) (xs ys : List X)
         → xs ≼' ys
         → (x :: xs) ≼' (x :: ys)
-≼'-cons x xs ys (zs , e) = {!!}
+≼'-cons x xs ys (zs , e) = zs , ap (x ::_) e
 ```
 
 Note that these amount to the constructors of `≼`.
@@ -176,7 +184,8 @@ Note that these amount to the constructors of `≼`.
 
 ```agda
 ≼-prime : {X : Type} (xs ys : List X) → xs ≼ ys → xs ≼' ys
-≼-prime = {!!}
+≼-prime [] ys le = ys , refl ys
+≼-prime (x :: xs) ys (::-is-prefix .x .xs ys' le) = ≼'-cons x xs ys' (≼-prime xs ys' le)
 ```
 
 ### Exercise 2.7
@@ -187,5 +196,5 @@ transitive, **prove** that `≼` is transitive too.
 ```agda
 ≼-is-transitive : {X : Type} (xs ys zs : List X)
                 → xs ≼ ys → ys ≼ zs → xs ≼ zs
-≼-is-transitive = {!!}
+≼-is-transitive xs ys zs xy yz = ≼-unprime xs zs (≼'-is-transitive xs ys zs (≼-prime xs ys xy) (≼-prime ys zs yz))
 ```

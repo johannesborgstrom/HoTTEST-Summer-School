@@ -21,14 +21,14 @@ We could define "double `ap`" like so:
 
 ```agda
 ap² : {A : Type} (f : A → A) {x y : A} → x ≡ y → f (f x) ≡ f (f y)
-ap² f e = {!!}
+ap² f e = ap f (ap f e)
 ```
 
 For example, this would help us prove the following without pattern matching:
 
 ```agda
 double-not-eq : {a b : Bool} → a ≡ b → not (not a) ≡ not (not b)
-double-not-eq e = ap² not e
+double-not-eq = ap² not
 ```
 
 **Define** "double `ap`" *without* using pattern matching.
@@ -43,7 +43,7 @@ we use the type for Vectors.
 ```agda
 transport-vec-A : {A : Type} {n m : ℕ} → n ≡ m
                 → Vector A n → Vector A m
-transport-vec-A e v = {!!}
+transport-vec-A {A} = transport (Vector A)
 ```
 
 **Complete** the above function.
@@ -83,7 +83,8 @@ Tip: Use `\comp` to type `∘`.
 The first `map` law can now be written in Agda as
 ```agda
 map-law1 : {A : Type} (xs : List A) → map id xs ≡ xs
-map-law1 xs = {!!}
+map-law1 [] = refl []
+map-law1 (x :: xs) = ap (x ::_) (map-law1 xs)
 ```
 
 **Define** this function. (Hint: An induction hypothesis comes in helpful).
@@ -92,9 +93,10 @@ map-law1 xs = {!!}
 
 A partial statement of the second `map` law is the following:
 ```agda
-map-law2 : {A B C : Type} (g : {!!}) (f : {!!}) (xs : List A)
-         → {!!} ≡ {!!}
-map-law2 g f xs = {!!}
+map-law2 : {A B C : Type} (g : B → C) (f : A → B) (xs : List A)
+         → map (g ∘ f) xs ≡ map g (map f xs)
+map-law2 g f [] = refl []
+map-law2 g f (x :: xs) = ap ((g ∘ f) x ::_ ) (map-law2 g f xs)
 ```
 
 **Complete** the holes in `map-law2 : ...`, i.e. write down the types of `g` and
@@ -115,14 +117,15 @@ conjunction of all the Booleans in it:
 
 ```agda
 and : List Bool → Bool
-and bs = {!!}
+and [] = true
+and (x :: bs) = x && (and bs)
 ```
 
 For example, `and true false` should equal to `false`
 
 ```agda
 and-example1 : and (true :: false :: []) ≡ false
-and-example1 = {! refl false !}
+and-example1 =  refl false 
  -- make sure that your code is correct by checking
  -- that the equality in this type is definitional.
  -- The proof should be just `refl false`.
@@ -130,7 +133,7 @@ and-example1 = {! refl false !}
 
 ```agda
 and-example2 : and [] ≡ true
-and-example2 = {! refl true!}
+and-example2 =  refl true
  -- make sure that your code is correct by checking
  -- that the equality in this type is definitional.
  -- The proof should be just `refl true`.
@@ -145,7 +148,7 @@ able to this just by composing `map` and your implementation of `and`.
 
 ```agda
 for-all : {A : Type} → (A → Bool) → List A → Bool
-for-all = {!!}
+for-all f = and ∘ (map f)
 ```
 
 Next, we will define a function `filter` that filters out a subset of a list of
@@ -156,7 +159,10 @@ function like this in Haskell before.
 
 ```agda
 filter : {A : Type} → (A → Bool) → List A → List A
-filter = {!!}
+filter p [] = []
+filter p (x :: xs) with p x
+... | true  = x :: filter p xs
+... | false = filter p xs
 ```
 
 `filter p xs` should give you the sublist of `xs` consisting of elements that
@@ -174,7 +180,7 @@ Using your `for-all`, **define** a function that expresses: *for every predicate
 
 ```agda
 filter-soundness : {A : Type} → Type
-filter-soundness {A} = {!!}
+filter-soundness {A} = (p : A → Bool) → (xs : List A) → and (map p (filter p xs)) ≡ true
 ```
 
 Note that the type of the function here is `Type`. This means that you are not

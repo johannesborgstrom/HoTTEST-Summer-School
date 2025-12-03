@@ -1,3 +1,4 @@
 *.agdai
 **/_build
 *.md~
+Agda/Exercises/Pool/.DS_Store
