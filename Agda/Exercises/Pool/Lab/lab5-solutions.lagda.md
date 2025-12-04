@@ -153,7 +153,7 @@ lists-from-vectors {A}
  where
   f : List A → Σ n ꞉ ℕ , Vector A n
   f []        = 0 , []
-  f (x :: xs) = suc (fst (f xs)) , (x :: snd (f xs))
+  f (x :: xs) = suc (pr₁ (f xs)) , (x :: pr₂ (f xs))
 
   g : Σ n ꞉ ℕ , Vector A n → List A
   g (0     , []       ) = []
@@ -166,7 +166,7 @@ lists-from-vectors {A}
   fg : f ∘ g ∼ id
   fg (0     , []       ) = refl (0 , [])
   fg (suc n , (x :: xs))
-   = ap (λ - → suc (fst -) , (x :: snd -)) (fg (n , xs))
+   = ap (λ - → suc (pr₁ -) , (x :: pr₂ -)) (fg (n , xs))
 
   f-is-bijection : is-bijection f
   f-is-bijection = record { inverse = g ; η = gf ; ε = fg }
@@ -175,7 +175,7 @@ open _≅_
 
 lfv-preserves-length : {A : Type} (xs : List A)
                      → length xs
-                     ≡ fst (bijection lists-from-vectors xs)
+                     ≡ pr₁ (bijection lists-from-vectors xs)
 lfv-preserves-length []        = refl 0
 lfv-preserves-length (x :: xs) = ap suc (lfv-preserves-length xs)
 

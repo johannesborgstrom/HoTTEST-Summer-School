@@ -283,8 +283,11 @@ is-even is-odd : ℕ → Type
 is-even x = Σ y ꞉ ℕ , x ≡ 2 * y
 is-odd  x = Σ y ꞉ ℕ , x ≡ 1 + 2 * y
 
+0-not-odd : ¬ (is-odd 0)
+0-not-odd ()
+
 1-not-even : ¬ (is-even 1)
-1-not-even (suc k , p) = (λ e → zero-is-not-suc (0 ≡⟨ e ⟩ k + suc k ≡⟨ +-step k k ⟩ suc (k + k) ∎ )) (ap pred p)
+1-not-even (suc k , p) = zero-is-not-suc (trans (suc-is-injective p) (+-step k k) )
 ```
 
 In these exercises, we will define a Boolean-valued version of the `is-even`
@@ -307,7 +310,7 @@ evenness-lemma₁ : (n : ℕ) → is-even (2 + n) → is-even n
 evenness-lemma₁ n (suc k , p) = k , goal
  where
   subgoal : suc (suc n) ≡ suc (suc (2 * k))
-  subgoal = suc (suc n)       ≡⟨ p ⟩
+  subgoal = suc (suc n)  ≡⟨ p ⟩
             suc k + suc k     ≡⟨ ap suc (+-step k k) ⟩
             suc ((suc k) + k) ∎
 
@@ -331,7 +334,7 @@ evenness-lemma₂ n (k , p) = suc k , goal
 
 ```agda
 even⇒check-even : (n : ℕ) → is-even n → check-even n ≡ true
-even⇒check-even zero (zero , p) = refl (check-even zero)
+even⇒check-even zero (zero , _) = refl (check-even zero)
 even⇒check-even (suc zero) e = 𝟘-nondep-elim (1-not-even e)
 even⇒check-even (suc (suc n)) ise = even⇒check-even n (evenness-lemma₁ n ise)
 ```
@@ -340,5 +343,6 @@ even⇒check-even (suc (suc n)) ise = even⇒check-even n (evenness-lemma₁ n i
 
 ```agda
 check-even⇒even : (n : ℕ) → check-even n ≡ true → is-even n
-check-even⇒even = {!!}
+check-even⇒even zero _ = zero , refl zero
+check-even⇒even (suc (suc n)) x = evenness-lemma₂ n (check-even⇒even n x)
 ```
