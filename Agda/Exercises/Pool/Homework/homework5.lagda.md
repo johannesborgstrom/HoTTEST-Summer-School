@@ -17,6 +17,7 @@ We will also want to use some things from the Lab and Homework sheet of Week 4:
 ```agda
 open import Pool.Homework.homework4-solutions
 open import Pool.Lab.lab4-solutions
+open import Pool.Lab.lab5-solutions
 ```
 
 ## Part I: More on length
@@ -27,7 +28,22 @@ operation.
 ```agda
 length-of-reverse : {A : Type} (xs : List A)
                   → length (reverse xs) ≡ length xs
-length-of-reverse = {!!}
+length-of-reverse [] = refl 0
+length-of-reverse (x :: xs) =
+  length ((reverse xs) ++ [ x ])
+        ≡⟨ length-of-++ (reverse xs) [ x ]  ⟩
+  length (reverse xs) + length [ x ]
+        ≡⟨ refl _ ⟩ 
+  length (reverse xs) + 1
+        ≡⟨ +-step (length (reverse xs)) 0 ⟩ 
+  suc (length (reverse xs) + 0)
+        ≡⟨ ap suc (+-base (length (reverse xs))) ⟩ 
+  suc (length (reverse xs))
+        ≡⟨ ap suc (length-of-reverse xs) ⟩ 
+  suc (length xs)
+        ≡⟨ refl _ ⟩
+  length (x :: xs)
+        ∎
 ```
 
 **Prove** the above.
@@ -41,16 +57,20 @@ length-of-reverse = {!!}
 ℕ-[⋆]-iso = record { bijection = f ; bijectivity = f-is-bijection }
  where
   f : ℕ → List 𝟙
-  f = {!!}
+  f zero = []
+  f (suc x) = ⋆ :: f x
 
   g : List 𝟙 → ℕ
-  g = {!!}
+  g [] = zero
+  g (x :: xs) = suc (g xs)
 
   gf : g ∘ f ∼ id
-  gf = {!!}
+  gf zero = refl zero
+  gf (suc x) = ap suc (gf x)
 
   fg : f ∘ g ∼ id
-  fg = {!!}
+  fg [] = refl []
+  fg (x :: xs) = ap (x ::_) (fg xs)
 
   f-is-bijection : is-bijection f
   f-is-bijection = record { inverse = g ; η = gf ; ε = fg }
@@ -67,7 +87,8 @@ Hint: The statement of Exercise 2b may help you.
 open _≅_
 
 ℕ→[⋆]-preserves-length : (n : ℕ) → length (bijection ℕ-[⋆]-iso n) ≡ n
-ℕ→[⋆]-preserves-length = {!!}
+ℕ→[⋆]-preserves-length zero = refl (length (bijection ℕ-[⋆]-iso zero))
+ℕ→[⋆]-preserves-length (suc n) = ap suc (ℕ→[⋆]-preserves-length n)
 ```
 
 Notice how `bijection` extracts the function `f` you defined in `ℕ-[⋆]-iso`.
@@ -80,12 +101,12 @@ Notice how `bijection` extracts the function `f` you defined in `ℕ-[⋆]-iso`.
 In this exercise, we will continue where we left off in the lab exercises on
 evenness. Recall the predicates `is-even` and `check-even`:
 
-```agda
+```agdatext
 is-even : ℕ → Type
 is-even x = Σ y ꞉ ℕ , x ≡ 2 * y
 ```
 
-```agda
+```agdatext
 check-even : ℕ → Bool
 check-even zero          = true
 check-even (suc zero)    = false
@@ -102,20 +123,22 @@ proving a lemma stating that a Boolean is either `true` or `false`.
 
 ```agda
 principle-of-bivalence : (b : Bool) → (b ≡ true) ∔ (b ≡ false)
-principle-of-bivalence = {!!}
+principle-of-bivalence true = inl (refl true)
+principle-of-bivalence false = inr (refl false)
 
 is-even-is-decidable : (n : ℕ) → is-decidable (is-even n)
 is-even-is-decidable n =
  ∔-nondep-elim goal₁ goal₂ (principle-of-bivalence (check-even n))
   where
    goal₁ : check-even n ≡ true → is-decidable (is-even n)
-   goal₁ p = {!!}
+   goal₁ p = inl (check-even⇒even n p)
 
    goal₂ : check-even n ≡ false → is-decidable (is-even n)
    goal₂ p = inr subgoal
     where
      subgoal : ¬ is-even n
-     subgoal q = {!!}
+     subgoal q with trans (p ⁻¹) (even⇒check-even n q) 
+     ... | ()
 ```
 
 ## Part IV: Stretcher exercises on length
@@ -168,7 +191,10 @@ Bool-elim A x₀ x₁ true  = x₁
 ```agda
 length-of-filter : {A : Type} (P : A → Bool) (xs : List A)
                  → length (filter P xs) ≤ length xs
-length-of-filter = {!!}
+length-of-filter P [] = ≤-zero 0
+length-of-filter P (x :: xs) with P x
+... | true  = ≤-suc (length (filter P xs)) (length xs) (length-of-filter P xs)
+... | false = (≤-trans (length (filter P xs)) (length xs) (suc (length xs)))  (length-of-filter P xs) (≤-suc-lemma (length xs))
 ```
 
 *Hints*:
@@ -188,7 +214,16 @@ lists, then we expect their sum to be equal to the length of the unfiltered list
 length-of-filters : {A : Type} (P : A → Bool) (xs : List A)
                   → length (filter P xs) + length (filter (not ∘ P) xs)
                   ≡ length xs
-length-of-filters = {!!}
+length-of-filters P [] = refl 0
+length-of-filters P (x :: xs) with P x 
+... | true   = ap suc (length-of-filters P xs)
+... | false  =
+      length (filter P xs) + suc (length (filter (λ x₁ → not (P x₁)) xs))
+    ≡⟨ +-step (length (filter P xs)) (length (filter (λ x₁ → not (P x₁)) xs)) ⟩
+      suc (length (filter P xs) + length (filter (λ x₁ → not (P x₁)) xs))
+    ≡⟨ ap suc (length-of-filters P xs) ⟩
+      suc (length xs)
+    ∎
 ```
 
 *Hint*: You can use associativity (`+-assoc`) and commutativity (`+-comm`) from
