@@ -257,15 +257,15 @@ PathOver-path-loop : ∀ {A : Type}
                    → q ≡ r [ (\ x → x ≡ x) ↓ p ]
 PathOver-path-loop {p = (refl _)} h = path-to-pathover (h ∙ (∙unit-l _)) 
 
-mult : S1 → S1 → S1
-mult = S1-rec ((\ y → y)) (λ≡ (S1-elim (λ z → z ≡ z) loop (PathOver-path-loop (refl _))))
+mult-funext : S1 → S1 → S1
+mult-funext = S1-rec ((\ y → y)) (λ≡ (S1-elim (λ z → z ≡ z) loop (PathOver-path-loop (refl _))))
 ```
 
 Note that it is also possible to do this without funext by binding the
 second input before doing the S1-rec on the first input (thanks Ulrik!):
 ```agda
-mult-nofunext : S1 → S1 → S1
-mult-nofunext x y = S1-rec y (S1-elim (λ z → z ≡ z) loop (PathOver-path-loop (refl _)) y) x
+mult : S1 → S1 → S1
+mult x y = S1-rec y (S1-elim (λ z → z ≡ z) loop (PathOver-path-loop (refl _)) y) x
 ```
 
 Above, we used the main part of function extensionality: a homotopy
