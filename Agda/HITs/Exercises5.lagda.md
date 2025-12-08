@@ -21,10 +21,9 @@ these items up as an equivalence S1 ≃ Circle2.
 
 ```agda
 to-from : (x : S1) → from (to x) ≡ x
-to-from = S1-elim to-from-inverse to-from-base (PathOver-roundtrip≡ from to loop ((∙unit-l _) ∙ to-from-loop))
-  where
-    to-from-inverse : S1 → Type
-    to-from-inverse z = from (to z) ≡ z
+to-from = S1-elim (λ z → from (to z) ≡ z) to-from-base
+                  (PathOver-roundtrip≡ from to loop
+                                       ((∙unit-l _) ∙ to-from-loop))
 
 circles-equivalent : S1 ≃ Circle2
 circles-equivalent ._≃_.map = to
@@ -45,13 +44,15 @@ Prove that rev is an equivalence.  Hint: you will need to state and prove
 one new generalized "path algebra" lemma and to use one of the lemmas from
 the "Functions are group homomorphism" section of Lecture 4's exercises.  
 ```agda
-involution : ∀ {A : Type} → (A → A) → A → Type
+involution : ∀ {l1 : Level} {A : Type l1} → (A → A) → A → Type l1
 involution f s = f (f s) ≡ s
 
-dep-involution : ∀ {B : Type} (A : B → B → Type) → (f : {a b : B} → A a b → A b a) →  {a b : B} → A a b → Type
+dep-involution : ∀ {l1 l2 : Level} {B : Type l1} (A : B → B → Type l2) →
+                 (f : {a b : B} → A a b → A b a) →
+                 {a b : B} → A a b → Type l2
 dep-involution A f {a} {b} x = f {b} {a} (f {a} {b} x) ≡ x
 
-!-dep-involution : ∀ {A : Type} {a b : A} (p : a ≡ b) → dep-involution _≡_  ! p
+!-dep-involution : ∀ {l1 : Level} {A : Type l1} {a b : A} (p : a ≡ b) → dep-involution _≡_  ! p
 !-dep-involution (refl _) = refl _
 
 PathOver-involution≡ : ∀ {A : Type} (f : A → A)
@@ -60,7 +61,7 @@ PathOver-involution≡ : ∀ {A : Type} (f : A → A)
                         {r : involution f a'}
                       → ! q ∙ ((ap f (ap f p)) ∙ r) ≡ p
                       → q ≡ r [ involution f ↓ p ]
-PathOver-involution≡ f (refl a) {q} {r} h = path-to-pathover 
+PathOver-involution≡ f (refl _) {q} {r} h = path-to-pathover 
                     (ap (q ∙_) (! h) ∙ 
                       (∙assoc _ _ (refl _ ∙ r) ∙ 
                         ((ap (_∙ (refl _ ∙ r)) (!-inv-r q)) ∙ 
@@ -88,8 +89,9 @@ rev-rev-loop = ! (refl (rev (rev base))) ∙
 
 rev-equiv : is-equiv rev
 rev-equiv .is-equiv.post-inverse    = rev
-rev-equiv .is-equiv.is-post-inverse = S1-elim (involution rev) (refl _)
-  (PathOver-involution≡ rev loop rev-rev-loop )
+rev-equiv .is-equiv.is-post-inverse =
+          S1-elim (involution rev) (refl _)
+                  (PathOver-involution≡ rev loop rev-rev-loop )
 rev-equiv .is-equiv.pre-inverse     = rev
 rev-equiv .is-equiv.is-pre-inverse  = rev-equiv .is-equiv.is-post-inverse
 ```
@@ -117,7 +119,7 @@ PathOver-path≡ {f = f} {p = refl _} {q} {r} h = path-to-pathover
       (q ≡⟨ ! h ⟩ refl (f _) ∙ r ≡⟨ ∙unit-l _  ⟩ r ∎)
 
 circles-to-torus : S1 → (S1 → Torus)
-circles-to-torus = S1-rec (S1-rec baseT pT) e
+circles-to-torus = S1-rec f e
   where
     f : S1 → Torus
     f = S1-rec baseT pT
@@ -128,7 +130,7 @@ circles-to-torus = S1-rec (S1-rec baseT pT) e
     e : f ≡ f
     e = λ≡ (S1-elim f∼f qT (PathOver-path≡ pa) )
       where
-        pa :  ap f loop ∙ qT ≡ qT ∙ ap f loop
+        pa : ap f loop ∙ qT ≡ qT ∙ ap f loop
         pa = ap f loop ∙ qT
                ≡⟨ ap (_∙ qT) (S1-rec-loop baseT pT) ⟩
             pT ∙ qT
@@ -167,8 +169,7 @@ function composition:
 ```agda
 ap-∘ : ∀ {l1 l2 l3 : Level} {A : Type l1} {B : Type l2} {C : Type l3}
        (f : A → B) (g : B → C)
-       {a a' : A}
-       (p : a ≡ a')
+       {a a' : A} (p : a ≡ a')
      → ap (g ∘ f) p ≡ ap g (ap f p)
 ap-∘ f g (refl _) = refl _
 ```
