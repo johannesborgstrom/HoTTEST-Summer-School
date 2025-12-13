@@ -52,27 +52,19 @@ dep-involution : ∀ {l1 l2 : Level} {B : Type l1} (A : B → B → Type l2) →
                  {a b : B} → A a b → Type l2
 dep-involution A f {a} {b} x = f {b} {a} (f {a} {b} x) ≡ x
 
-!-dep-involution : ∀ {l1 : Level} {A : Type l1} {a b : A} (p : a ≡ b) → dep-involution _≡_  ! p
+!-dep-involution : ∀ {l1 : Level} {A : Type l1} {a b : A} (p : a ≡ b) →
+                           dep-involution _≡_  ! p
 !-dep-involution (refl _) = refl _
 
-PathOver-involution≡ : ∀ {A : Type} (f : A → A)
-                        {a a' : A} (p : a ≡ a')
-                        {q : involution f a }
-                        {r : involution f a'}
-                      → ! q ∙ ((ap f (ap f p)) ∙ r) ≡ p
-                      → q ≡ r [ involution f ↓ p ]
-PathOver-involution≡ f (refl _) {q} {r} h = path-to-pathover 
-                    (ap (q ∙_) (! h) ∙ 
-                      (∙assoc _ _ (refl _ ∙ r) ∙ 
-                        ((ap (_∙ (refl _ ∙ r)) (!-inv-r q)) ∙ 
-                          (∙unit-l (refl _ ∙ r) ∙ 
-                            ∙unit-l r))))
+PathOver-involution≡ : ∀ {A : Type} (f : A → A) →
+                        {a a' : A} (p : a ≡ a') → 
+                        {q : involution f a } {r : involution f a'} → (ap f (ap f p)) ∙ r ≡ q ∙ p →
+                        q ≡ r [ involution f ↓ p ]
+PathOver-involution≡ f (refl _) {q} {r} h = path-to-pathover (! h ∙ ∙unit-l _)
 
-rev-rev-loop : ! (refl (rev (rev base))) ∙
-    (ap rev (ap rev loop) ∙ refl (rev (rev base))) ≡ loop
-rev-rev-loop = ! (refl (rev (rev base))) ∙
-    (ap rev (ap rev loop) ∙ refl (rev (rev base))) 
-        ≡⟨ silly _ ⟩ 
+rev-rev-loop : ap rev (ap rev loop) ∙ refl (rev (rev base)) ≡ (refl (rev (rev base))) ∙ loop
+rev-rev-loop = ap rev (ap rev loop) ∙ refl (rev (rev base))
+        ≡⟨ ∙unit-r _ ⟩ 
     ap rev (ap rev loop)
         ≡⟨ ap (ap rev) (S1-rec-loop _ (! loop)) ⟩ 
     ap rev (! loop )
@@ -82,10 +74,9 @@ rev-rev-loop = ! (refl (rev (rev base))) ∙
     ! (! loop)
         ≡⟨ !-dep-involution _ ⟩ 
     loop
+        ≡⟨ ! (∙unit-l _) ⟩
+    (refl (rev (rev base))) ∙ loop
         ∎
-    where
-      silly : ∀{x y : S1} → (p : x ≡ y) → ! (refl x) ∙ (p ∙ refl y) ≡ p
-      silly (refl _) = refl _ 
 
 rev-equiv : is-equiv rev
 rev-equiv .is-equiv.post-inverse    = rev
@@ -161,7 +152,7 @@ multiplication.
 (⋆) Show that base is a left unit.
 ```agda
 mult-unit-l : (y : S1) → mult base y ≡ y
-mult-unit-l y = S1-rec-base y (S1-elim (λ z → z ≡ z) loop (PathOver-path-loop (refl _)) y)
+mult-unit-l y = refl _
 ```
 
 (⋆) Because we'll need it in a second, show that ap distributes over
@@ -189,8 +180,14 @@ In the case where q is reflexivity, applying f to the pair (loop , refl)
 can reduce like this:
 ```agda
 S1-rec-loop-1 : ∀ {A B : Type} {f : A → B} {h : f ≡ f} {a : A}
-                     →  ap (\ x → S1-rec f h x a) loop ≡ app≡ h a
-S1-rec-loop-1 {A}{B}{f}{h}{a} = {!!}
+                     →  ap (\ x → S1-rec f h x a) loop ≡ app≡ h a [ S1-rec f h base a ≡ S1-rec f h base a ]
+S1-rec-loop-1 {A}{B}{f}{h}{a} =
+                       ap (\ x → S1-rec f h x a) loop
+                 ≡⟨ ap-∘ (S1-rec f h) (\ p → p a) loop ⟩
+                       ap (\ f → f a) (ap (S1-rec f h) loop)
+                 ≡⟨ ap (ap (\ p → p a)) (S1-rec-loop f h) ⟩
+                       ap (\ p → p a) h
+                       ∎
 ```
 Prove this reduction using ap-∘ and the reduction rule for S1-rec on the loop.  
 
@@ -206,13 +203,20 @@ PathOver-endo≡ : ∀ {A : Type} {f : A → A}
                → q ≡ r [ (\ x → f x ≡ x) ↓ p ]
 PathOver-endo≡ {p = (refl _)} h = path-to-pathover (h ∙ ∙unit-l _)
 
-mult-unit-r-Type : S1 → Type
-mult-unit-r-Type x = mult x base ≡ x
 mult-unit-r : (x : S1) → mult x base ≡ x
-mult-unit-r = S1-elim mult-unit-r-Type (refl (mult base base)) (PathOver-endo≡ {!p!})
+mult-unit-r = S1-elim (λ x → mult x base ≡ x) (refl (mult base base)) (PathOver-endo≡ p)
   where
+    looop : (x : S1) → x ≡ x
+    looop = {!!}
+
     p : the Type (refl (mult base base) ∙ loop ≡ ap (λ z → mult z base) loop)
-    p = refl (mult base base) ∙ loop ≡⟨ ∙unit-l _ ⟩ loop ≡⟨ {!!} ⟩ ap (λ z → mult z base) loop ∎
+    p = refl (mult base base) ∙ loop
+       ≡⟨ ∙unit-l _ ⟩
+             loop
+       ≡⟨ ! (λ≡β looop base) ⟩
+             app≡ (λ≡ looop) base
+       ≡⟨ ! {!S1-rec-loop-1!} ⟩
+             ap (λ z → mult z base) loop ∎
 ```
 
 # Suspensions and the 2-point circle
@@ -254,10 +258,24 @@ west-east true = west
 west-east false = east
 
 c2s2c-north : s2c (c2s north) ≡ north
-c2s2c-north = {! !}
+c2s2c-north = refl _
 
 c2s2c-south : s2c (c2s south) ≡ south
-c2s2c-south = {!!}
+c2s2c-south = refl _
+
+c2s2c-west : ap s2c (ap c2s west) ≡ west
+c2s2c-west = ap s2c (ap c2s west)
+           ≡⟨ ap (ap s2c) (Circle2-rec-west _ _ _ _) ⟩
+                 ap s2c (merid true)
+           ≡⟨ Susp-rec-merid _ _ _ _ ⟩
+                west ∎
+
+c2s2c-east : ap s2c (ap c2s east) ≡ east
+c2s2c-east = ap s2c (ap c2s east)
+           ≡⟨ ap (ap s2c) (Circle2-rec-east _ _ _ _) ⟩
+                 ap s2c (merid false)
+           ≡⟨ Susp-rec-merid _ _ _ _ ⟩
+                east ∎
 
 c2s2c : (x : Circle2) → s2c (c2s x) ≡ x
 c2s2c = Circle2-elim fam c2s2c-north c2s2c-south po-west po-east
@@ -266,16 +284,32 @@ c2s2c = Circle2-elim fam c2s2c-north c2s2c-south po-west po-east
         fam x = s2c (c2s x) ≡ x
         
         po-west : c2s2c-north ≡ c2s2c-south [ fam ↓ west ]
-        po-west = {!!}
+        po-west = PathOver-roundtrip≡ s2c c2s west ((∙unit-l _) ∙ c2s2c-west)
 
         po-east : c2s2c-north ≡ c2s2c-south [ fam ↓ east ]
-        po-east = {!!}
+        po-east = PathOver-roundtrip≡ s2c c2s east ((∙unit-l _) ∙ c2s2c-east)
 
 s2c2s-north : c2s (s2c (northS {Bool})) ≡ northS {Bool}
-s2c2s-north = {!!}
+s2c2s-north = refl _
 
 s2c2s-south : c2s (s2c (southS {Bool})) ≡ southS {Bool}
-s2c2s-south = {!!}
+s2c2s-south = refl _
+
+s2c2s-west : ap c2s (ap s2c (merid true)) ≡ merid true
+s2c2s-west = ap c2s (ap s2c (merid true))
+             ≡⟨ ap (ap c2s) (Susp-rec-merid _ _ _ _) ⟩
+                  ap c2s west
+             ≡⟨ Circle2-rec-west _ _ _ _ ⟩
+                  merid true
+             ∎
+
+s2c2s-east : ap c2s (ap s2c (merid false)) ≡ merid false
+s2c2s-east = ap c2s (ap s2c (merid false))
+             ≡⟨ ap (ap c2s) (Susp-rec-merid _ _ _ _) ⟩
+                  ap c2s east
+             ≡⟨ Circle2-rec-east _ _ _ _ ⟩
+                  merid false
+             ∎
 
 s2c2s : (x : Susp Bool) → c2s (s2c x) ≡ x
 s2c2s = Susp-elim fam s2c2s-north s2c2s-south po-bool
@@ -284,8 +318,8 @@ s2c2s = Susp-elim fam s2c2s-north s2c2s-south po-bool
     fam x = c2s (s2c x) ≡ x
     
     po-bool : (x : Bool) → s2c2s-north ≡ s2c2s-south [ fam ↓ merid x ]
-    po-bool true = {!!}
-    po-bool false = {!!}
+    po-bool true  = PathOver-roundtrip≡ c2s s2c (merid true) ((∙unit-l _) ∙ s2c2s-west)
+    po-bool false = PathOver-roundtrip≡ c2s s2c (merid false) ((∙unit-l _) ∙ s2c2s-east)
 ```
 
 (⋆) Conclude that Circle2 is equivalent to Susp Bool:
@@ -307,11 +341,32 @@ that this operation is functorial, meaning that it preserves identity
 and composition of functions:
 ```agda
 susp-func-id : ∀ {X : Type} → susp-func {X} id ∼ id
-susp-func-id = Susp-elim {!!} {!!} {!!} {!!} 
-
+susp-func-id {X} = Susp-elim _ (refl _) (refl _) (\ x → PathOver-endo≡ (∙unit-l _ ∙ meridIs x))
+         where
+           meridIs : (x : X) → merid x ≡ ap (susp-func id) (merid x)
+           meridIs x = ! (Susp-rec-merid northS southS (merid ∘ id) x)          
+           
 susp-func-∘ : ∀ {X Y Z : Type} (f : X → Y) (g : Y → Z)
             → susp-func {X} (g ∘ f) ∼ susp-func g ∘ susp-func f
-susp-func-∘ f g = {!!}
+susp-func-∘ {X} f g = Susp-elim susp-∘ (refl _) (refl _) meridIs
+  where
+    susp-∘ : Susp X → Type
+    susp-∘ x = susp-func {X} (g ∘ f) x ≡ (susp-func g ∘ susp-func f) x
+
+    meridIs : (x : X) → refl _ ≡ refl _ [ susp-∘ ↓ merid x ]
+    meridIs x = PathOver-path≡ (
+            ap (susp-func (g ∘ f)) (merid x)
+      ≡⟨ Susp-rec-merid _ _ _ _ ⟩
+            merid (g (f (x)))
+      ≡⟨ ! (Susp-rec-merid _ _ _ _) ⟩
+            ap (susp-func g) (merid (f x))
+      ≡⟨ ap (ap (susp-func g)) (! (Susp-rec-merid _ _ _ _)) ⟩
+            ap (susp-func g) (ap (susp-func f) (merid x))
+      ≡⟨ ! (ap-∘  (susp-func f) (susp-func g) (merid x)) ⟩
+         ap (λ z → (susp-func g ∘ susp-func f) z) (merid x)
+      ≡⟨ !(∙unit-l _) ⟩
+         (refl _) ∙ ap (λ z → (susp-func g ∘ susp-func f) z) (merid x)
+      ∎)
 ```
 
 
