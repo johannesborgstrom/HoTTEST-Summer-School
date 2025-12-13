@@ -6,7 +6,6 @@ open import new-prelude
 
 open import Lecture4-notes
 open import Lecture5-notes
-open import Solutions5-dan using (PathOver-path≡)
 
 module Lecture6-notes where
 
@@ -22,6 +21,15 @@ Univalence says that paths in the universe are equivalences.  We'll
 start with just the ability to turn an equivalence into a path.  
 
 ```agda
+PathOver-path≡ : ∀ {A B : Type} {g : A → B} {f : A → B}
+                          {a a' : A} {p : a ≡ a'}
+                          {q : (f a) ≡ (g a)}
+                          {r : (f a') ≡ (g a')}
+                        → (ap f p) ∙ r ≡ q ∙ ap g p 
+                        → q ≡ r [ (\ x → (f x) ≡ (g x)) ↓ p ]
+PathOver-path≡ {f = f} {p = refl _} {q} {r} h = path-to-pathover 
+      (q ≡⟨ ! h ⟩ refl (f _) ∙ r ≡⟨ ∙unit-l _  ⟩ r ∎)
+
 postulate 
   ua  : ∀ {l : Level} {X Y : Type l} → X ≃ Y → X ≡ Y
 ```
