@@ -105,8 +105,8 @@ PathOver-path≡ : ∀ {A B : Type} {g : A → B} {f : A → B}
                           {r : (f a') ≡ (g a')}
                         → (ap f p) ∙ r ≡ q ∙ ap g p 
                         → q ≡ r [ (\ x → (f x) ≡ (g x)) ↓ p ]
-PathOver-path≡ {f = f} {p = refl _} {q} {r} h = path-to-pathover 
-      (q ≡⟨ ! h ⟩ refl (f _) ∙ r ≡⟨ ∙unit-l _  ⟩ r ∎)
+PathOver-path≡ {f = f} {p = refl _} {q} {r} h = 
+      path-to-pathover (q ≡⟨ ! h ⟩ refl (f _) ∙ r ≡⟨ ∙unit-l _ ⟩ r ∎)
 
 circles-to-torus : S1 → (S1 → Torus)
 circles-to-torus = S1-rec f e
@@ -118,7 +118,7 @@ circles-to-torus = S1-rec f e
     f∼f x = f x ≡ f x
 
     e : f ≡ f
-    e = λ≡ (S1-elim f∼f qT (PathOver-path≡ pa) )
+    e = λ≡ (S1-elim f∼f qT (PathOver-path≡ pa))
       where
         pa : ap f loop ∙ qT ≡ qT ∙ ap f loop
         pa = ap f loop ∙ qT
@@ -212,7 +212,7 @@ mult-unit-r = S1-elim (λ x → mult x base ≡ x) (refl (mult base base)) (Path
     p = refl (mult base base) ∙ loop
        ≡⟨ ∙unit-l _ ⟩
              loop
-       ≡⟨ ! (λ≡β looop base) ⟩
+       ≡⟨ ! (λ≡β {!   !} base) ⟩
              app≡ (λ≡ looop) base
        ≡⟨ ! {!S1-rec-loop-1!} ⟩
              ap (λ z → mult z base) loop ∎
@@ -256,12 +256,6 @@ west-east : Bool → north ≡ south
 west-east true = west
 west-east false = east
 
-c2s2c-north : s2c (c2s north) ≡ north
-c2s2c-north = refl _
-
-c2s2c-south : s2c (c2s south) ≡ south
-c2s2c-south = refl _
-
 c2s2c-west : ap s2c (ap c2s west) ≡ west
 c2s2c-west = ap s2c (ap c2s west)
            ≡⟨ ap (ap s2c) (Circle2-rec-west _ _ _ _) ⟩
@@ -277,22 +271,16 @@ c2s2c-east = ap s2c (ap c2s east)
                 east ∎
 
 c2s2c : (x : Circle2) → s2c (c2s x) ≡ x
-c2s2c = Circle2-elim fam c2s2c-north c2s2c-south po-west po-east
+c2s2c = Circle2-elim fam (refl north) (refl south) po-west po-east
       where
         fam : (x : Circle2) → Type
         fam x = s2c (c2s x) ≡ x
         
-        po-west : c2s2c-north ≡ c2s2c-south [ fam ↓ west ]
+        po-west : refl north ≡ refl south [ fam ↓ west ]
         po-west = PathOver-roundtrip≡ s2c c2s west ((∙unit-l _) ∙ c2s2c-west)
 
-        po-east : c2s2c-north ≡ c2s2c-south [ fam ↓ east ]
+        po-east : refl north ≡ refl south [ fam ↓ east ]
         po-east = PathOver-roundtrip≡ s2c c2s east ((∙unit-l _) ∙ c2s2c-east)
-
-s2c2s-north : c2s (s2c (northS {Bool})) ≡ northS {Bool}
-s2c2s-north = refl _
-
-s2c2s-south : c2s (s2c (southS {Bool})) ≡ southS {Bool}
-s2c2s-south = refl _
 
 s2c2s-west : ap c2s (ap s2c (merid true)) ≡ merid true
 s2c2s-west = ap c2s (ap s2c (merid true))
@@ -311,12 +299,12 @@ s2c2s-east = ap c2s (ap s2c (merid false))
              ∎
 
 s2c2s : (x : Susp Bool) → c2s (s2c x) ≡ x
-s2c2s = Susp-elim fam s2c2s-north s2c2s-south po-bool
+s2c2s = Susp-elim fam (refl northS) (refl southS) po-bool
   where
     fam : (x : Susp Bool) → Type
     fam x = c2s (s2c x) ≡ x
     
-    po-bool : (x : Bool) → s2c2s-north ≡ s2c2s-south [ fam ↓ merid x ]
+    po-bool : (x : Bool) → refl northS ≡ refl southS [ fam ↓ merid x ]
     po-bool true  = PathOver-roundtrip≡ c2s s2c (merid true) ((∙unit-l _) ∙ s2c2s-west)
     po-bool false = PathOver-roundtrip≡ c2s s2c (merid false) ((∙unit-l _) ∙ s2c2s-east)
 ```
@@ -326,10 +314,7 @@ s2c2s = Susp-elim fam s2c2s-north s2c2s-south po-bool
 ```agda
 Circle2-Susp-Bool : Circle2 ≃ Susp Bool
 Circle2-Susp-Bool ._≃_.map = c2s
-Circle2-Susp-Bool ._≃_.is-equivalence .is-equiv.post-inverse = s2c
-Circle2-Susp-Bool ._≃_.is-equivalence .is-equiv.is-post-inverse = c2s2c
-Circle2-Susp-Bool ._≃_.is-equivalence .is-equiv.pre-inverse = s2c
-Circle2-Susp-Bool ._≃_.is-equivalence .is-equiv.is-pre-inverse = s2c2s
+Circle2-Susp-Bool ._≃_.is-equivalence = Inverse s2c c2s2c s2c s2c2s
 ```
 
 # Functoriality of suspension (⋆⋆)
@@ -350,7 +335,7 @@ susp-func-∘ : ∀ {X Y Z : Type} (f : X → Y) (g : Y → Z)
 susp-func-∘ {X} f g = Susp-elim susp-∘ (refl _) (refl _) meridIs
   where
     susp-∘ : Susp X → Type
-    susp-∘ x = susp-func {X} (g ∘ f) x ≡ (susp-func g ∘ susp-func f) x
+    susp-∘ x = susp-func (g ∘ f) x ≡ (susp-func g ∘ susp-func f) x
 
     meridIs : (x : X) → refl _ ≡ refl _ [ susp-∘ ↓ merid x ]
     meridIs x = PathOver-path≡ (
