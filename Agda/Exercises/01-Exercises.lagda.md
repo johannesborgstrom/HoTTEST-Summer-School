@@ -197,7 +197,7 @@ back and forth between `a ≣ b` and `a ≡ b`.
 ≡-to-≣ _ _ (refl false) = ⋆
 
 ≣-to-≡ : (a b : Bool) → a ≣ b → a ≡ b
-≣-to-≡ true true _ = refl true
+≣-to-≡ true  true  _ = refl true
 ≣-to-≡ false false _ = refl false
 ```
 
@@ -219,9 +219,9 @@ Use pattern matching to **prove** that `||` is commutative.
 
 ```agda
 ||-is-commutative : (a b : Bool) → a || b ≡ b || a
-||-is-commutative true true = refl true
-||-is-commutative true false = refl true
-||-is-commutative false true = refl true
+||-is-commutative true  true  = refl true
+||-is-commutative true  false = refl true
+||-is-commutative false true  = refl true
 ||-is-commutative false false = refl false
 ```
 
@@ -232,9 +232,9 @@ commutative.
 
 ```agda
 &&-is-commutative : (a b : Bool) → a && b ≡ b && a
-&&-is-commutative true true = refl true
-&&-is-commutative true false = refl false
-&&-is-commutative false true = refl false
+&&-is-commutative true  true  = refl true
+&&-is-commutative true  false = refl false
+&&-is-commutative false true  = refl false
 &&-is-commutative false false = refl false
 ```
 
@@ -244,19 +244,19 @@ commutative.
 
 ```agda
 &&-is-associative : (a b c : Bool) → a && (b && c) ≡ (a && b) && c
-&&-is-associative true true true = refl true
-&&-is-associative true true false = refl false
-&&-is-associative true false _ = refl false
-&&-is-associative false _ _ = refl false
+&&-is-associative true true  true  = refl true
+&&-is-associative true true  false = refl false
+&&-is-associative true false _     = refl false
+&&-is-associative false _    _     = refl false
 
 &&'-is-associative : (a b c : Bool) → a &&' (b &&' c) ≡ (a &&' b) &&' c
-&&'-is-associative true true true = refl true
-&&'-is-associative true true false = refl false
-&&'-is-associative true false true = refl false
-&&'-is-associative true false false = refl false
-&&'-is-associative false true true = refl false
-&&'-is-associative false true false = refl false
-&&'-is-associative false false true = refl false
+&&'-is-associative true  true  true  = refl true
+&&'-is-associative true  true  false = refl false
+&&'-is-associative true  false true  = refl false
+&&'-is-associative true  false false = refl false
+&&'-is-associative false true  true  = refl false
+&&'-is-associative false true  false = refl false
+&&'-is-associative false false true  = refl false
 &&'-is-associative false false false = refl false
 ```
 

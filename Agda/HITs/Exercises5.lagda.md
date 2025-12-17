@@ -79,12 +79,11 @@ rev-rev-loop = ap rev (ap rev loop) ∙ refl (rev (rev base))
         ∎
 
 rev-equiv : is-equiv rev
-rev-equiv .is-equiv.post-inverse    = rev
-rev-equiv .is-equiv.is-post-inverse =
-          S1-elim (involution rev) (refl _)
+rev-equiv = Inverse rev rev-rev rev rev-rev
+  where
+    rev-rev : rev ∘ rev ∼ id
+    rev-rev = S1-elim (involution rev) (refl _)
                   (PathOver-involution≡ rev loop rev-rev-loop )
-rev-equiv .is-equiv.pre-inverse     = rev
-rev-equiv .is-equiv.is-pre-inverse  = rev-equiv .is-equiv.is-post-inverse
 ```
 
 
@@ -184,7 +183,7 @@ S1-rec-loop-1 : ∀ {A B : Type} {f : A → B} {h : f ≡ f} {a : A}
 S1-rec-loop-1 {A}{B}{f}{h}{a} =
                        ap (\ x → S1-rec f h x a) loop
                  ≡⟨ ap-∘ (S1-rec f h) (\ p → p a) loop ⟩
-                       ap (\ f → f a) (ap (S1-rec f h) loop)
+                       ap (\ p → p a) (ap (S1-rec f h) loop)
                  ≡⟨ ap (ap (\ p → p a)) (S1-rec-loop f h) ⟩
                        ap (\ p → p a) h
                        ∎

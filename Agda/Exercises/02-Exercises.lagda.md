@@ -35,10 +35,10 @@ open import sums
 Prove
 ```agda
 uncurry : {A B X : Type} → (A → B → X) → (A × B → X)
-uncurry = λ z z₁ → z (z₁ .pr₁) (z₁ .pr₂)
+uncurry f (a , b) = f a b
 
 curry : {A B X : Type} → (A × B → X) → (A → B → X)
-curry = λ z z₁ z₂ → z (z₁ , z₂)
+curry f a b = f (a , b)
 ```
 You might know these functions from programming e.g. in Haskell.
 But what do they say under the propositions-as-types interpretation?
@@ -52,21 +52,21 @@ exfalso : ∀{A : Set} → 𝟘 → A
 exfalso ()
 
 [i] : {A B C : Type} → (A × B) ∔ C → (A ∔ C) × (B ∔ C)
-[i] (inl x) = inl (x .pr₁) , inl (x .pr₂)
-[i] (inr x) = inr x , inr x
+[i] (inl (a , b)) = inl a , inl b
+[i] (inr c) = inr c , inr c
 
 [ii] : {A B C : Type} → (A ∔ B) × C → (A × C) ∔ (B × C)
-[ii] (inl x , pr₄) = inl (x , pr₄)
-[ii] (inr x , pr₄) = inr (x , pr₄)
+[ii] (inl a , c) = inl (a , c)
+[ii] (inr b , c) = inr (b , c)
 
 [iii] : {A B : Type} → ¬ (A ∔ B) → ¬ A × ¬ B
-[iii] = λ z → (λ z₁ → z (inl z₁)) , (λ z₁ → z (inr z₁))
+[iii] f = (λ a → f (inl a)) , λ b → f (inr b)
 
 [iv] : {A B : Type} → ¬ (A × B) → ¬ A ∔ ¬ B
 [iv] x = {!!} -- we don't know which of A or B might be empty
 
 [v] : {A B : Type} → (A → B) → ¬ B → ¬ A
-[v] = λ AtoB nb a → nb (AtoB a)
+[v] f nb a = nb (f a)
 
 [vi] : {A B : Type} → (¬ A → ¬ B) → B → A
 [vi] f b = {!!} -- We do get that a is not false, but dne does not hold here.
@@ -85,7 +85,7 @@ exfalso ()
 [x] : {A B : Type} {C : A → B → Type}
       → ((a : A) → (Σ b ꞉ B , C a b))
       → Σ f ꞉ (A → B) , ((a : A) → C a (f a))
-[x] = λ z → (λ z₁ → z z₁ .pr₁) , (λ a → z a .pr₂)
+[x] f = (λ a → f a .pr₁) , (λ a → f a .pr₂)
 ```
 For each goal determine whether it is provable or not.
 If it is, fill it. If not, explain why it shouldn't be possible.
@@ -105,7 +105,8 @@ In the lecture we have discussed that we can't  prove `∀ {A : Type} → ¬¬ A
 What you can prove however, is
 ```agda
 tne : ∀ {A : Type} → ¬¬¬ A → ¬ A
-tne = λ z z₁ → z (λ z₂ → z₂ z₁)
+tne ta a = ta (λ da → da a)
+-- λ z z₁ → z (λ z₂ → z₂ z₁)
 ```
 
 
@@ -113,10 +114,11 @@ tne = λ z z₁ → z (λ z₂ → z₂ z₁)
 Prove
 ```agda
 ¬¬-functor : {A B : Type} → (A → B) → ¬¬ A → ¬¬ B
-¬¬-functor = λ z z₁ z₂ → z₁ (λ z₃ → z₂ (z z₃))
+¬¬-functor f nna nb = nna (λ a → nb (f a))
+
 
 ¬¬-kleisli : {A B : Type} → (A → ¬¬ B) → ¬¬ A → ¬¬ B
-¬¬-kleisli = λ z z₁ z₂ → z₁ (λ z₃ → z z₃ z₂)
+¬¬-kleisli f nna nb = nna (λ a → f a nb)
 ```
 Hint: For the second goal use `tne` from the previous exercise
 
@@ -149,8 +151,8 @@ we have seen canonical types corresponding true and false in the lectures)
 Prove
 ```agda
 bool-≡-char₁ : ∀ (b b' : Bool) → b ≡ b' → (bool-as-type b ⇔ bool-as-type b')
-bool-≡-char₁ _ _ (refl true) = (λ _ → ⋆) , (λ _ → ⋆)
-bool-≡-char₁ _ _ (refl false) = ((λ ()) ,  λ ())
+bool-≡-char₁ _ _ (refl true)  = (λ _ → ⋆) , (λ _ → ⋆)
+bool-≡-char₁ _ _ (refl false) = ((λ ())   ,  λ ())
 ```
 
 
@@ -159,7 +161,7 @@ bool-≡-char₁ _ _ (refl false) = ((λ ()) ,  λ ())
 Using ex. 2, conclude that
 ```agda
 true≢false : ¬ (true ≡ false)
-true≢false ()
+true≢false p = bool-≡-char₁ true false p .pr₁ ⋆
 ```
 You can actually prove this much easier! How?
 
@@ -169,10 +171,10 @@ You can actually prove this much easier! How?
 Finish our characterisation of `_≡_` by proving
 ```agda
 bool-≡-char₂ : ∀ (b b' : Bool) → (bool-as-type b ⇔ bool-as-type b') → b ≡ b'
-bool-≡-char₂ true true _ = refl true
-bool-≡-char₂ true false (f , _) with f ⋆
+bool-≡-char₂ true  true  _ = refl true
+bool-≡-char₂ true  false (f , _) with f ⋆
 ... | ()
-bool-≡-char₂ false true (_ , g) with g ⋆
+bool-≡-char₂ false true  (_ , g) with g ⋆
 ... | ()
 bool-≡-char₂ false false _ = refl false
 ```

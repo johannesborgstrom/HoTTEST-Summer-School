@@ -126,12 +126,12 @@ Bool-𝟚-isomorphism = record { bijection = f ; bijectivity = f-is-bijection }
   g 𝟏 = true
 
   gf : g ∘ f ∼ id
-  gf true  = refl ((g ∘ f) true)
-  gf false = refl ((g ∘ f) false)
+  gf true  = refl true
+  gf false = refl false
 
   fg : f ∘ g ∼ id
-  fg 𝟎 = refl ((f ∘ g) 𝟎)
-  fg 𝟏 = refl ((f ∘ g) 𝟏)
+  fg 𝟎 = refl 𝟎
+  fg 𝟏 = refl 𝟏
 
   f-is-bijection : is-bijection f
   f-is-bijection = record { inverse = g ; η = gf ; ε = fg }
@@ -202,20 +202,20 @@ Fin-isomorphism n = record { bijection = f n ; bijectivity = f-is-bijection n }
     IH : g n (f n k) ≡ k
     IH = gf n k
 
-    γ = g (suc n) (f (suc n) (suc k)) ≡⟨ refl (g (suc n) (f (suc n) (suc k))) ⟩
-        g (suc n) (suc' (f n k))      ≡⟨ refl (g (suc n) (suc' (f n k))) ⟩
+    γ = g (suc n) (f (suc n) (suc k)) ≡⟨ refl _ ⟩
+        g (suc n) (suc' (f n k))      ≡⟨ refl _ ⟩
         suc (g n (f n k))             ≡⟨ ap suc IH ⟩
         suc k                         ∎
 
   fg : (n : ℕ) → f n ∘ g n ∼ id
-  fg (suc n) (inl ⋆) = refl ((f (suc n) ∘ g (suc n)) (inl ⋆))
+  fg (suc n) (inl ⋆) = refl (inl ⋆)
   fg (suc n) (inr k) = γ
    where
     IH : f n (g n k) ≡ k
     IH = fg n k
 
-    γ = f (suc n) (g (suc n) (suc' k)) ≡⟨ refl (f (suc n) (g (suc n) (suc' k))) ⟩
-        f (suc n) (suc (g n k))        ≡⟨ refl (f (suc n) (suc (g n k))) ⟩
+    γ = f (suc n) (g (suc n) (suc' k)) ≡⟨ refl _ ⟩
+        f (suc n) (suc (g n k))        ≡⟨ refl _ ⟩
         suc' (f n (g n k))             ≡⟨ ap suc' IH ⟩
         suc' k                         ∎
 
@@ -261,7 +261,7 @@ minimal-element P = Σ n ꞉ ℕ , (P n) × (is-lower-bound P n)
 Prove that all numbers are at least as large as zero.
 ```agda
 leq-zero : (n : ℕ) → 0 ≤₁ n
-leq-zero zero = ⋆
+leq-zero zero    = ⋆
 leq-zero (suc n) = leq-zero n
 ```
 
@@ -294,7 +294,9 @@ Prove this lemma.
 
 ```agda
 is-minimal-element-suc :
-  {P : ℕ → Type}  {m : ℕ}  → (is-lower-bound (λ x → P (suc x)) m) → ¬ (P 0) →
+  {P : ℕ → Type}  {m : ℕ}  →
+  (is-lower-bound (λ x → P (suc x)) m) →
+  ¬ (P 0) →
   is-lower-bound P (suc m)
 is-minimal-element-suc _ neg-p0 zero A = 𝟘-nondep-elim (neg-p0 A)
 is-minimal-element-suc is-lower-bound _ (suc n) A = is-lower-bound n A
@@ -310,11 +312,9 @@ Prove this lemma.
 well-ordering-principle-suc :
   (P : ℕ → Type) → is-decidable (P 0) →
   minimal-element (λ m → P (suc m)) → minimal-element P
-well-ordering-principle-suc P (inl p0) _  = zero ,  p0 , λ m A → ⋆ 
-well-ordering-principle-suc P (inr neg-p0) (m , (pm , is-min-m)) = suc m , (pm , islbPsm)
-  where
-    islbPsm : is-lower-bound P (suc m) 
-    islbPsm = is-minimal-element-suc is-min-m neg-p0
+well-ordering-principle-suc P (inl p0) _  = zero , p0 , (λ m A → ⋆)
+well-ordering-principle-suc P (inr neg-p0) (m , (pm , is-min-m)) =
+  suc m , (pm , is-minimal-element-suc is-min-m neg-p0)
 ```
 
 ### Exercise 11 (🌶)
@@ -322,7 +322,7 @@ well-ordering-principle-suc P (inr neg-p0) (m , (pm , is-min-m)) = suc m , (pm ,
 Use the previous two lemmas to prove the well-ordering principle
 ```agda
 well-ordering-principle : (P : ℕ → Type) → (d : is-decidable-predicate P) → (n : ℕ) → P n → minimal-element P
-well-ordering-principle P d 0 p = zero , p , λ m A → ⋆
+well-ordering-principle P d zero    p = zero , p , (λ m A → ⋆)
 well-ordering-principle P d (suc n) p = well-ordering-principle-suc P (d 0)
     (well-ordering-principle (λ z → P (suc z)) (λ x → d (suc x)) n p)
 ```
