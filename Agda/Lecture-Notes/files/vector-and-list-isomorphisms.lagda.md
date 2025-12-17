@@ -69,15 +69,6 @@ EPrefl {A} {M} = J' A M (λ P' → P' ≡ (M , refl M)) (refl (M , refl M))
 EP : ∀ {A : Set} {M : A} → (P1 P2 : PathFrom M) → P1 ≡ P2
 EP {A} {M} P1 P2 = P1 ≡⟨ EPrefl P1 ⟩ (M , refl M) ≡⟨ sym (EPrefl P2) ⟩ P2 ∎
 
-
-data Singleton {A : Set} (x : A) : Set where
-  _with≡_ : (y : A) → x ≡ y → Singleton x
-
-inspect : ∀ {A : Set} (x : A) → Singleton x
-inspect x = x with≡ refl x
-
-
-
 vectors-from-lists : {A : Type} (n : ℕ) → Vector A n ≅ (Σ xs ꞉ List A , (length xs ≡ n))
 vectors-from-lists {A} n = record { bijection = f n ; bijectivity = f-is-bijection n }
  where
@@ -149,37 +140,49 @@ List' X = Σ n ꞉ ℕ , Vector' X n
 vectors-in-basic-MLTT : {A : Type} (n : ℕ) → Vector A n ≅ Vector' A n
 vectors-in-basic-MLTT {A} n = record { bijection = f ; bijectivity = f-is-bijection }
  where
-  f : {!!} → {!!}
-  f = {!!}
+  f : {n : ℕ} → Vector A n → Vector' A n
+  f [] = ⋆
+  f (x :: xs) = x , f xs
 
-  g : {!!} → {!!}
-  g = {!!}
+  g : ∀ n → Vector' A n → Vector A n
+  g zero ⋆ = []
+  g (suc n) (x , xs) = x :: g n xs
 
-  gf : g ∘ f ∼ id
-  gf = {!!}
+  gf : ∀ n → (g n) ∘ f ∼ id
+  gf 0 [] = refl []
+  gf (suc n) (x :: xs) = ap (x ::_) (gf n xs)
 
-  fg : f ∘ g ∼ id
-  fg = {!!}
+  fg : ∀ n → f ∘ (g n) ∼ id
+  fg zero ⋆ = refl _
+  fg (suc n) (x , xs) = ap (x ,_) (fg n xs)
 
   f-is-bijection : is-bijection f
-  f-is-bijection = record { inverse = g ; η = gf ; ε = fg }
+  f-is-bijection = record { inverse = g n ; η = gf n ; ε = fg n }
 ```
 
 ```
 lists-in-basic-MLTT : {A : Type} → List A ≅ List' A
 lists-in-basic-MLTT {A} = record { bijection = f ; bijectivity = f-is-bijection }
  where
-  f : {!!} → {!!}
-  f = {!!}
+  f : List A → List' A
+  f [] = zero , ⋆
+  f (x :: xs) with f xs
+  ... | (n , vec) = suc n , x , vec
 
-  g : {!!} → {!!}
-  g = {!!}
+  g : List' A → List A
+  g (zero , ⋆) = []
+  g (suc n , x , xs) = x :: g (n , xs)
 
   gf : g ∘ f ∼ id
-  gf = {!!}
+  gf [] = refl _
+  gf (x :: xs) = ap (x ::_) (gf xs)
 
   fg : f ∘ g ∼ id
-  fg = {!!}
+  fg (zero , ⋆) = refl _
+  fg (suc n , x , xsv) = ap addx (fg (n , xsv))
+    where
+      addx : List' A → List' A
+      addx (m , xs) = (suc m) , x , xs
 
   f-is-bijection : is-bijection f
   f-is-bijection = record { inverse = g ; η = gf ; ε = fg }

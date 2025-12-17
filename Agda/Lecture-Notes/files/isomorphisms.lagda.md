@@ -112,4 +112,37 @@ Bool-𝟚-isomorphism' = record { bijection = f ; bijectivity = f-is-bijection }
 ```
 And these are the only two isomorphisms (you could try to prove this in Agda as a rather advanced exercise). More advanced examples are in other files.
 
+
+```agda
+module _ where
+  data Singleton {A : Set} (x : A) : Set where
+    _with≡_ : (y : A) → x ≡ y → Singleton x
+
+  inspect : ∀ {A : Set} (x : A) → Singleton x
+  inspect x = x with≡ refl x
+
+  bijection-injective : {A B : Type} → {f : A → B} → (bij : is-bijection f)
+                      → { a b : A } → f a ≡ f b → a ≡ b
+  bijection-injective {f = f} (Inverse g η _) {a} {b} p =
+    a
+      ≡⟨ sym (η a) ⟩
+    (g ∘ f) a
+      ≡⟨ ap g p ⟩
+    (g ∘ f) b
+      ≡⟨ η b ⟩
+    b ∎ 
+
+  true≢false : true ≡ false → 𝟘
+  true≢false ()
+
+  onlyTwoIsomporphisms : (iso : Bool ≅ 𝟚)
+    → ((iso ._≅_.bijection) ∼ (Bool-𝟚-isomorphism ._≅_.bijection))
+      ∔ ((iso ._≅_.bijection) ∼ (Bool-𝟚-isomorphism' ._≅_.bijection))
+  onlyTwoIsomporphisms (Isomorphism f bij) with inspect (f true) | inspect (f false)
+  ... | 𝟎 with≡ pt | 𝟏 with≡ pf = inr λ{ true → pt ; false → pf }
+  ... | 𝟏 with≡ pt | 𝟎 with≡ pf = inl λ{ true → pt ; false → pf }
+  ... | 𝟎 with≡ pt | 𝟎 with≡ pf = 𝟘-nondep-elim (true≢false (bijection-injective bij (pt ∙ pf ⁻¹ )))
+  ... | 𝟏 with≡ pt | 𝟏 with≡ pf = 𝟘-nondep-elim (true≢false (bijection-injective bij (pt ∙ pf ⁻¹ )))
+```
+
 [Go back to the table of contents](https://martinescardo.github.io/HoTTEST-Summer-School/)

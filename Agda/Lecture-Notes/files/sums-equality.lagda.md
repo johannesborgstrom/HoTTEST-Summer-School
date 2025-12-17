@@ -11,8 +11,10 @@ module sums-equality where
 
 open import general-notation
 open import sums
+open import products
 open import binary-products
 open import identity-type
+open import isomorphisms
 ```
 -->
 # Equality in `Σ` types
@@ -111,6 +113,18 @@ So the functions `from-Σ-≡` and `to-Σ-≡` give a complete characterization 
  inverse `to-Σ-≡`, so that we actually get the stronger result
 
    > `((x , a) ≡ (y , b)) ≅ (Σ e ꞉ x ≡ y , transport A e a ≡ b)`.
+
+```agda
+Σ-≡' : {X : Type} {A : X → Type} {(x , a) (y , b) : Σ A}
+    → ((x , a) ≡ (y , b)) ≅ (Σ e ꞉ x ≡ y , transport A e a ≡ b)
+Σ-≡' ._≅_.bijection   = from-Σ-≡
+Σ-≡' ._≅_.bijectivity = Inverse to-Σ-≡ η ε
+    where
+      η : to-Σ-≡ ∘ from-Σ-≡ ∼ id
+      η (refl _) = refl (refl (_ , _))
+      ε : from-Σ-≡ ∘ to-Σ-≡ ∼ id
+      ε (refl _ , refl _) = refl (_ , _)
+```
 
 ## Dependent version of `ap`
 
