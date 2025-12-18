@@ -41,11 +41,19 @@ private
 ### Exercise 1 (★)
 
 State and prove funExt for dependent functions `f g : (x : A) → B x`
-
+```agda
+depFunExt : {f g : (x : A) → B x} → (∀ x → f x ≡ g x) → f ≡ g
+depFunExt f∼g i x = f∼g x i
+```
 ### Exercise 2 (★)
 
 Generalize the type of ap to dependent function `f : (x : A) → B x`
 (hint: the result should be a `PathP`)
+```agda
+depAp : (f : (x : A) → B x) {x y : A} → (p : x ≡ y)
+      → PathP (λ j → B (p j)) (f x) (f y)
+depAp f p i = f (p i)
+```
 
 
 ## Part II: Some facts about (homotopy) propositions and sets
@@ -57,6 +65,10 @@ are defined in `cubical-prelude` in the usual way
 ### Exercise 3 (★)
 
 State and prove that inhabited propositions are contractible
+```agda
+isContrProp : isProp A → A → isContr A
+isContrProp isp a = a , isp a
+```
 
 
 ### Exercise 4 (★)
@@ -65,7 +77,7 @@ Prove
 
 ```agda
 isPropΠ : (h : (x : A) → isProp (B x)) → isProp ((x : A) → B x)
-isPropΠ = {!!}
+isPropΠ h f g = depFunExt (λ x → h x (f x) (g x))
 ```
 
 ### Exercise 5 (★)
@@ -74,7 +86,7 @@ Prove the inverse of `funExt` (sometimes called `happly`):
 
 ```agda
 funExt⁻ : {f g : (x : A) → B x} → f ≡ g → ((x : A) → f x ≡ g x)
-funExt⁻  = {!!}
+funExt⁻ p x i = p i x
 ```
 
 ### Exercise 6 (★★)
@@ -83,7 +95,7 @@ Use funExt⁻ to prove isSetΠ:
 
 ```agda
 isSetΠ : (h : (x : A) → isSet (B x)) → isSet ((x : A) → B x)
-isSetΠ = {!!}
+isSetΠ h f g p q = {!!} 
 ```
 
 ### Exercise 7 (★★★): alternative contractibility of singletons
@@ -100,7 +112,7 @@ Prove the corresponding version of contractibility of singetons for
 
 ```agda
 isContrSingl' : (x : A) → isContr (singl' x)
-isContrSingl' x = {!!}
+isContrSingl' x = (x , refl) , (λ (y , p) i → p (~ i) , λ j → p (j ∨ (~ i)))
 ```
 
 ## Part III: Equality in Σ-types
@@ -118,17 +130,17 @@ module _ {A : Type ℓ} {B : A → Type ℓ'} {x y : Σ A B} where
 
   ΣPathP : Σ p ꞉ pr₁ x ≡ pr₁ y , PathP (λ i → B (p i)) (pr₂ x) (pr₂ y)
          → x ≡ y
-  ΣPathP = {!!}
+  ΣPathP (fst , snd) i = fst i , snd i
 
   PathPΣ : x ≡ y
          → Σ p ꞉ pr₁ x ≡ pr₁ y , PathP (λ i → B (p i)) (pr₂ x) (pr₂ y)
-  PathPΣ = {!!}
+  PathPΣ q = (λ i → q i .pr₁) , (λ i → q i .pr₂)
 
   ΣPathP-PathPΣ : ∀ p → PathPΣ (ΣPathP p) ≡ p
-  ΣPathP-PathPΣ = {!!}
+  ΣPathP-PathPΣ p _ = (p .pr₁) , (p .pr₂)
 
   PathPΣ-ΣPathP : ∀ p → ΣPathP (PathPΣ p) ≡ p
-  PathPΣ-ΣPathP = {!!}
+  PathPΣ-ΣPathP p _ j = (p j .pr₁) , (p j .pr₂)
 ```
 
 If one looks carefully the proof of prf in Lecture 7 uses ΣPathP
@@ -151,13 +163,42 @@ and `Torus'` with a path constructor `square` that involves composition.
 
 Using these two ideas, define the *Klein bottle* in two different ways.
 
+```agda
+data Klein : Type₀ where
+  point : Klein
+  line1 : point ≡ point
+  line2 : point ≡ point
+  square : PathP (λ i → line1 (~ i) ≡ line1 i) line2 line2
+```
+
+
 ### Exercise 10 (★★)
 
 Prove
 
 ```agda
 suspUnitChar : Susp Unit ≡ Interval
-suspUnitChar = {!!}
+suspUnitChar = isoToPath (iso f g fg gf)
+  where
+    f : Susp Unit → Interval
+    f north       = zero
+    f south       = one
+    f (merid _ i) = seg i
+
+    g : Interval → Susp Unit
+    g zero    = north
+    g one     = south
+    g (seg i) = merid ⋆ i
+
+    fg : section f g
+    fg zero    = refl
+    fg one     = refl
+    fg (seg i) = refl
+
+    gf : retract f g
+    gf north       = refl
+    gf south       = refl
+    gf (merid _ i) = refl
 ```
 
 
@@ -172,7 +213,27 @@ The goal of this exercise is to prove
 
 ```agda
 suspBoolChar : Susp Bool ≡ S¹
-suspBoolChar = {!!}
+suspBoolChar = isoToPath (iso f g fg gf)
+  where
+  f : Susp Bool → S¹
+  f north = base
+  f south = base
+  f (merid true i) = loop i
+  f (merid false i) = refl {_} {_} {base} i
+
+  g : S¹ → Susp Bool
+  g base = north
+  g (loop i) = (merid true ∙ sym (merid false)) i
+
+  fg : section f g
+  fg base = refl
+  fg (loop i) j = {!!}
+
+  gf : retract f g
+  gf north = refl
+  gf south = {!!}
+  gf (merid true i) j = {!(merid true ∙ sym (merid false)) (i ∧ ~ j)!}
+  gf (merid false i) j = {!!}
 ```
 
 For the map `Susp Bool → S¹`, we have to specify the behavior of two

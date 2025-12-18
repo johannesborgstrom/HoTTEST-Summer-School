@@ -290,7 +290,7 @@ over a Path"). In general `PathP A x y` has
    y : A i1
 ```
 
-So PathP lets us natively define heteorgeneous paths, i.e. paths
+So PathP lets us natively define heterogeneous paths, i.e. paths
 where the endpoints are in different types. This allows us to
 specify the type of the second component of `prf`:
 
